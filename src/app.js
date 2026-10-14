@@ -2,7 +2,7 @@ import { questions } from './questions.js';
 import { archetypes, getResult, rankHabits } from './scoring.js';
 
 // Set SITE_URL to the production address (e.g. 'https://bhaktyachamcha.in') before launch.
-// Until then the current browser origin is used.
+// Until then the current page origin is used.
 const SITE_URL = '';
 
 const config = {
@@ -38,10 +38,10 @@ function renderLanding() {
       <section class="hero-band">
         <div class="hero page-width">
           <div>
-            <h1><span>Bhakt ho</span><span>ya Chamcha?</span></h1>
-            <p class="hero-lede">10 sawaal. Ek seedha verdict. Phir dekhte hain group mein kaun kya nikla.</p>
-            <button class="button button-primary button-big" data-action="start">Quiz shuru karo</button>
-            <p class="hero-note">2 minute lagenge. Koi signup nahi. Tumhare jawaab sirf tumhare phone mein rehte hain.</p>
+            <h1><span>Bhakt Ho</span><span>Ya Chamcha?</span></h1>
+            <p class="hero-lede">10 sawaal. Ek political reality check. Phir pata chalega group chat mein asli Bhakt, Chamcha aur Fact-Checker kaun hai. 👀</p>
+            <button class="button button-primary button-big" data-action="start">Chalo, Reality Check Lo 🔥</button>
+            <p class="hero-note">2 min Quiz. Signup nahi.</p>
           </div>
           <div class="ticket-stack" aria-hidden="true">
             ${fan.map((a) => `<div class="ticket c-${a.id}"><div class="ticket-emoji">${a.emoji}</div><h3>${shortTitle(a)}</h3><p>${a.subtitle}</p></div>`).join('')}
@@ -54,13 +54,13 @@ function renderLanding() {
         <h2 id="steps-title">Kaise kaam karta hai</h2>
         <ol>
           <li><strong>10 sawaal ka jawaab do</strong><p>Political situations jo har group chat mein hoti hain. Sach sach chuno.</p></li>
-          <li><strong>Apni habit dekho</strong><p>Jo habit tumne sabse zyada chuni, wahi tumhara result. Poora breakdown bhi milega.</p></li>
-          <li><strong>Dost ko challenge karo</strong><p>Result card WhatsApp Status pe lagao, aur dekho dost kya nikalta hai.</p></li>
+          <li><strong>Apni habit dekho</strong><p>Tumhare answers ka pattern decide karega tumhara result. Phir milega tumhara political personality roast. 😂</p></li>
+          <li><strong>Dost ko challenge karo</strong><p>Apna result share karo, dost ko challenge karo. Dekhte hain kaun apna result accept karta hai aur kaun appeal file karta hai. 😂</p></li>
         </ol>
       </section>
 
       <section class="results-intro page-width" aria-labelledby="results-title">
-        <h2 id="results-title">Chhe result. Tum kaunse ho?</h2>
+        <h2 id="results-title">6 Categories. Ek Tum. Kaunsi Wali? 👀</h2>
         <p>Har result ek political aadat hai. Kisi bhi party ka fan inme se koi bhi ho sakta hai.</p>
         <div class="result-tiles">
           ${Object.values(archetypes).map((a) => `<article class="result-tile c-${a.id}"><div class="tile-emoji" aria-hidden="true">${a.emoji}</div><div><h3>${shortTitle(a)}</h3><p>${a.subtitle}</p></div></article>`).join('')}
@@ -72,8 +72,8 @@ function renderLanding() {
       </section>
 
       <section class="landing-cta page-width">
-        <h2>Toh ho jaaye reality check?</h2>
-        <button class="button button-primary button-big" data-action="start">Quiz shuru karo</button>
+        <h2>Ab apni baari. Dekhte hain tumhara dimaag kis side hai. 👀</h2>
+        <button class="button button-primary button-big" data-action="start">Mera Result Batao 🔥</button>
       </section>
     </div>
   `;
@@ -186,8 +186,8 @@ function renderResult() {
         <button class="text-button" data-action="restart">Quiz dobara do</button>
         <button class="text-button" data-action="method" aria-expanded="false">Result kaise decide hota hai?</button>
       </div>
-      <div class="method-note" hidden><strong>Transparent hai, scientific nahi.</strong> Har jawaab ek habit se juda hai. Jo habit tumne sabse zyada choose ki, wahi tumhara result hai, aur doosri sabse common habit bhi dikhayi jaati hai. Tie hone par jo habit tumne sabse last mein choose ki, wo jeet-ti hai. Koi party, leader ya personal data involved nahi.</div>
-      <p class="result-note">Tumhare jawaab sirf is browser mein hain. Ye result entertainment ke liye hai. Ye tumhari political affiliation ke baare mein koi claim nahi karta.</p>
+      <div class="method-note" hidden><strong>Transparent hai, scientific nahi.</strong> Har answer ek reasoning habit se map hota hai. Tumhare 10 answers ka overall pattern primary result aur runner-up decide karta hai. Tie hone par tumhara sabse recent matching answer tie-break karta hai. Koi party, leader ya personal data involved nahi.</div>
+      <p class="result-note">Ye result entertainment ke liye hai. Ye tumhari political affiliation ke baare mein koi claim nahi karta.</p>
     </section>
   `;
   app.querySelector('h1').focus({ preventScroll: true });
