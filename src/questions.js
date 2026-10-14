@@ -96,3 +96,88 @@ export const questions = [
     ],
   },
 ];
+
+const englishPrompts = [
+  'Your favourite leader is caught making a major mistake. What is your first reaction?',
+  'A “BREAKING” forward arrives in the family group. Forwarded many times.',
+  'A major promise was made before the election. It still has not been delivered.',
+  'Your best friend has the opposite political views. The topic comes up over chai.',
+  'Your favourite leader is facing a tough interview on TV.',
+  'The same thing you called wrong when the other side did it is now being done by your side.',
+  'Your preferred side loses the election.',
+  'A viral screenshot says, “Leader X said this!” There is no source.',
+  'A new policy benefits you, but it could harm another group.',
+  'What could make you rethink your favourite leader or political side?',
+];
+
+const englishOptions = [
+  [
+    'They must have had a reason. We do not know the full picture.',
+    'So what? The other side has done something worse.',
+    'I will check the original video or statement. Clips can be misleading.',
+    'Wrong is wrong. The same rule should apply to everyone.',
+  ],
+  [
+    'I give it a thumbs-up without reading. Keeping peace at home matters.',
+    'I type “Source?” and then the group goes silent.',
+    'It supports my side? I might as well forward it once.',
+    'If it is positive about my leader, it is probably true.',
+  ],
+  [
+    'I keep track of which promise was made and when.',
+    'Big projects take time. We need to be patient.',
+    'Which government has ever delivered every promise?',
+    'Everyone makes promises. Why should I care?',
+  ],
+  [
+    'Change the subject: “Hey, did you watch yesterday’s match?”',
+    'I accept the points that are right and call out the ones that are wrong.',
+    'I come prepared with links and data.',
+    'I remind them what their side has done.',
+  ],
+  [
+    'The anchor clearly has an agenda. The interview was not fair.',
+    'I am watching to see whether they give direct answers.',
+    'I will watch the full interview. I will not judge from clips.',
+    'Popcorn is ready. It is entertainment, buddy.',
+  ],
+  [
+    'It was wrong then, and it is wrong now.',
+    'The situation is different. Try to understand their constraints.',
+    'The logic behind big decisions becomes clear later.',
+    'I will judge by the outcome. Whether the work happened is what matters.',
+  ],
+  [
+    'Whatever. I still have to go to work tomorrow.',
+    'We need to look at the reasons for the loss and the report card.',
+    'It is not as if the winners are perfect either.',
+    'I do not belong to any side. I vote issue by issue.',
+  ],
+  [
+    'I check the official handle and the original source.',
+    'True or not, it is funny. Share it.',
+    'It is about the other side’s leader? Then it must be true.',
+    'I would check it even if it were about my side. So I will check it now.',
+  ],
+  [
+    'I will look at the impact on both sides, not just my own benefit.',
+    'I will check which promise it belongs to and what its target is.',
+    'If the leader introduced it, it will benefit everyone in the long run.',
+    'It benefits me. Why should I get involved in the debate?',
+  ],
+  [
+    'They have years of track record. One or two things will not change my view.',
+    'Solid evidence from credible sources.',
+    'Repeated broken promises and no visible work on the ground.',
+    'I do not have one permanent favourite. Every issue is separate.',
+  ],
+];
+
+export const englishQuestions = questions.map((question, questionIndex) => ({
+  ...question,
+  prompt: englishPrompts[questionIndex],
+  options: question.options.map((option, optionIndex) => ({
+    ...option,
+    text: englishOptions[questionIndex][optionIndex],
+  })),
+}));

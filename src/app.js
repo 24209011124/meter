@@ -1,4 +1,4 @@
-import { questions } from './questions.js';
+import { englishQuestions, questions } from './questions.js';
 import { archetypes, getResult, rankHabits } from './scoring.js';
 
 // Set SITE_URL to the production address (e.g. 'https://bhaktyachamcha.in') before launch.
@@ -20,10 +20,24 @@ let answers = [];
 let currentQuestion = 0;
 let result = null;
 let advancing = false;
+let language = 'hinglish';
 
 const optionLetter = (index) => String.fromCharCode(65 + index);
 const shortTitle = (archetype) => archetype.title.replace(': ON', '');
 const displayUrl = () => config.url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+const activeQuestions = () => language === 'english' ? englishQuestions : questions;
+
+function languageToggle() {
+  return `<div class="language-toggle" role="group" aria-label="Question language"><span>Language</span><button class="${language === 'hinglish' ? 'active' : ''}" data-language="hinglish" aria-pressed="${language === 'hinglish'}">Hinglish</button><button class="${language === 'english' ? 'active' : ''}" data-language="english" aria-pressed="${language === 'english'}">English</button></div>`;
+}
+
+function bindLanguageToggle() {
+  app.querySelectorAll('[data-language]').forEach((button) => button.addEventListener('click', () => {
+    language = button.dataset.language;
+    if (document.body.classList.contains('is-landing')) renderLanding();
+    else renderQuiz();
+  }));
+}
 
 function setPage(name) {
   document.body.classList.toggle('is-landing', name === 'landing');
@@ -40,6 +54,7 @@ function renderLanding() {
           <div>
             <h1><span>Bhakt Ho</span><span>Ya Chamcha?</span></h1>
             <p class="hero-lede">10 sawaal. Ek political reality check. Phir pata chalega group chat mein asli Bhakt, Chamcha aur Fact-Checker kaun hai. 👀</p>
+            ${languageToggle()}
             <button class="button button-primary button-big" data-action="start">Chalo, Reality Check Lo 🔥</button>
             <p class="hero-note">2 min Quiz. Signup nahi.</p>
           </div>
@@ -77,35 +92,38 @@ function renderLanding() {
       </section>
     </div>
   `;
+  bindLanguageToggle();
   app.querySelectorAll('[data-action="start"]').forEach((button) => button.addEventListener('click', startQuiz));
 }
 
 function renderQuiz() {
   setPage('quiz');
-  const question = questions[currentQuestion];
+  const question = activeQuestions()[currentQuestion];
   const selected = answers[currentQuestion];
   const isLast = currentQuestion === questions.length - 1;
   app.innerHTML = `
     <section class="quiz-shell page-width" aria-labelledby="question-title">
-      <div class="quiz-top"><span>Sawaal ${currentQuestion + 1} / ${questions.length}</span><button class="text-button" data-action="home">Band karo</button></div>
-      <div class="progress-dots" role="progressbar" aria-valuemin="1" aria-valuemax="${questions.length}" aria-valuenow="${currentQuestion + 1}" aria-label="Quiz progress">
-        ${questions.map((_, index) => `<i class="${index < currentQuestion ? 'done' : index === currentQuestion ? 'current' : ''}"></i>`).join('')}
+      <div class="quiz-top"><span>${language === 'english' ? 'Question' : 'Sawaal'} ${currentQuestion + 1} / ${activeQuestions().length}</span><button class="text-button" data-action="home">${language === 'english' ? 'Exit' : 'Band karo'}</button></div>
+      ${languageToggle()}
+      <div class="progress-dots" role="progressbar" aria-valuemin="1" aria-valuemax="${activeQuestions().length}" aria-valuenow="${currentQuestion + 1}" aria-label="Quiz progress">
+        ${activeQuestions().map((_, index) => `<i class="${index < currentQuestion ? 'done' : index === currentQuestion ? 'current' : ''}"></i>`).join('')}
       </div>
       <div class="question-card">
         <h1 id="question-title">${question.prompt}</h1>
         <fieldset class="options">
-          <legend class="sr-only">Ek jawaab chuno</legend>
+          <legend class="sr-only">${language === 'english' ? 'Choose one answer' : 'Ek jawaab chuno'}</legend>
           ${question.options.map((option, index) => `<button class="option ${selected === index ? 'selected' : ''}" data-option="${index}" aria-pressed="${selected === index}"><span class="option-letter" aria-hidden="true">${optionLetter(index)}</span><span>${option.text}</span></button>`).join('')}
         </fieldset>
         <div class="quiz-actions">
-          <button class="text-button" data-action="back" ${currentQuestion === 0 ? 'hidden' : ''}>Pichhla sawaal</button>
+          <button class="text-button" data-action="back" ${currentQuestion === 0 ? 'hidden' : ''}>${language === 'english' ? 'Previous question' : 'Pichhla sawaal'}</button>
           ${selected !== undefined
-            ? `<button class="button button-primary" data-action="next">${isLast ? 'Result dikhao' : 'Agla sawaal'}</button>`
-            : `<span class="quiz-hint">Jawaab chunte hi agla sawaal aayega</span>`}
+            ? `<button class="button button-primary" data-action="next">${isLast ? (language === 'english' ? 'Show my result' : 'Result dikhao') : (language === 'english' ? 'Next question' : 'Agla sawaal')}</button>`
+            : `<span class="quiz-hint">${language === 'english' ? 'Choose an answer to continue' : 'Jawaab chunte hi agla sawaal aayega'}</span>`}
         </div>
       </div>
     </section>
   `;
+  bindLanguageToggle();
   app.querySelectorAll('[data-option]').forEach((button) => button.addEventListener('click', () => chooseOption(Number(button.dataset.option))));
   app.querySelector('[data-action="back"]').addEventListener('click', () => { currentQuestion -= 1; renderQuiz(); focusQuestion(); });
   app.querySelector('[data-action="next"]')?.addEventListener('click', goForward);

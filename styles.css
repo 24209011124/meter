@@ -115,6 +115,13 @@ body.is-landing .site-header, body.is-landing .header-note { color: var(--chalk)
 /* Quiz */
 .quiz-shell { max-width: 760px; padding: 20px 0 96px; }
 .quiz-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; font-weight: 600; }
+.language-toggle { display: flex; align-items: center; gap: 6px; margin: 14px 0 12px; color: var(--muted); font-size: .8rem; }
+.language-toggle span { margin-right: 4px; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; }
+.language-toggle button { border: 1px solid rgba(42, 10, 59, .28); border-radius: 999px; padding: 5px 11px; background: transparent; color: var(--jamun); font-size: .78rem; cursor: pointer; }
+.language-toggle button.active, .language-toggle button:hover, .language-toggle button:focus-visible { background: var(--jamun); color: var(--chalk); }
+.hero .language-toggle { margin: 22px 0 4px; }
+.hero .language-toggle button { border-color: rgba(255, 247, 251, .5); color: var(--chalk); }
+.hero .language-toggle button.active, .hero .language-toggle button:hover, .hero .language-toggle button:focus-visible { background: var(--chalk); color: var(--jamun); }
 .progress-dots { margin: 14px 0 30px; display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; }
 .progress-dots i { height: 10px; border: 2px solid var(--jamun); border-radius: 999px; transition: background .2s ease; }
 .progress-dots i.done { background: var(--jamun); }
