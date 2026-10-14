@@ -1,42 +1,98 @@
+// Each option maps to exactly one reasoning habit. The result is simply the habit
+// a person picked most often, so it is transparent and explainable.
+// Habits: andhbhakt (leader can't be wrong), chamcha (my side can't be wrong / whataboutery),
+// factChecker, spectator, manifesto (accountability on delivery), independent (same rules for everyone).
+// No option names or hints at any real party or leader.
+
 export const questions = [
   {
-    prompt: 'Tumhare favourite leader se koi badi mistake ho jaati hai. Tumhara first reaction kya hoga?',
-    options: ['Koi baat nahi, sabse mistakes hoti hain.', 'Pehle dekhte hain exactly hua kya hai.', 'Opposition ne bhi toh aisa kiya tha!', 'Mistake hai toh openly accept karni chahiye.'],
+    prompt: 'Tumhare favourite leader ki ek badi galti saamne aati hai. First reaction?',
+    options: [
+      { text: 'Unhone soch samajh ke hi kiya hoga. Hum poori picture nahi jaante.', habit: 'andhbhakt' },
+      { text: 'Haan toh? Doosri side ne isse bada kaand kiya tha.', habit: 'chamcha' },
+      { text: 'Pehle original video ya statement dekhunga. Clip toh kuch bhi ho sakti hai.', habit: 'factChecker' },
+      { text: 'Galti hai toh galti hai. Kisi ki bhi ho, rule same.', habit: 'independent' },
+    ],
   },
   {
-    prompt: 'Family WhatsApp group mein ek shocking political news aati hai. Tum kya karoge?',
-    options: ['Interesting hai, aage forward kar deta hoon.', 'Source check karunga, phir believe karunga.', 'Pehle dekho, kisne bheja hai! 😂', 'Doosre sources se verify karke opinion banaunga.'],
+    prompt: 'Family group mein "BREAKING 🚨" wala forward aata hai. Forwarded many times.',
+    options: [
+      { text: 'Bina padhe 👍 de deta hoon. Ghar ki shanti zaroori hai.', habit: 'spectator' },
+      { text: '"Source?" likh deta hoon. Phir group mein sannata.', habit: 'factChecker' },
+      { text: 'Meri side ke favour mein hai? Ek baar aage bhej hi deta hoon.', habit: 'chamcha' },
+      { text: 'Leader ke baare mein positive hai, toh mostly sach hi hoga.', habit: 'andhbhakt' },
+    ],
   },
   {
-    prompt: 'Kisi government policy ke against protest ho raha hai. Tumhara approach?',
-    options: ['Pehle samjhunga ki protest kis baat ka hai.', 'Protesters ki demands aur evidence check karunga.', 'Government ko apna side explain karna chahiye.', 'Context jaane bina opinion nahi banaunga.'],
+    prompt: 'Election se pehle ek bada promise kiya gaya tha. Ab tak poora nahi hua.',
+    options: [
+      { text: 'Maine note karke rakha hai kaunsa promise kab kiya tha.', habit: 'manifesto' },
+      { text: 'Itne bade kaam mein time lagta hai. Patience rakho.', habit: 'andhbhakt' },
+      { text: 'Pehle kaunsi sarkar ne saare promises poore kiye the?', habit: 'chamcha' },
+      { text: 'Promises toh sab karte hain. Mujhe kya.', habit: 'spectator' },
+    ],
   },
   {
-    prompt: 'Election mein kiya gaya ek major promise poora nahi hua. Ab?',
-    options: ['Reasons samjhunga aur progress check karunga.', 'Promises toh sab karte hain, normal hai.', 'Next election mein performance dekhunga.', 'Party ko jawab dena chahiye ki promise kyun poora nahi hua.'],
+    prompt: 'Best friend tumse bilkul ulta political sochta hai. Chai pe topic aa gaya.',
+    options: [
+      { text: 'Topic change: "Bhai, kal ka match dekha?"', habit: 'spectator' },
+      { text: 'Uska jo point sahi hai, maan leta hoon. Jo galat hai, bol deta hoon.', habit: 'independent' },
+      { text: 'Links aur data ke saath ready hoon.', habit: 'factChecker' },
+      { text: 'Usko yaad dilata hoon ki uski side ne kya-kya kiya hai.', habit: 'chamcha' },
+    ],
   },
   {
-    prompt: 'Tumhara best friend tumhari political thinking se bilkul opposite hai. Ab?',
-    options: ['Chai pe debate karenge, dosti apni jagah.', 'Politics avoid karunga, friendship important hai.', 'Facts aur arguments se convince karne ki koshish karunga.', 'Agree to disagree. Har debate jeetna zaroori nahi.'],
+    prompt: 'TV pe tumhare favourite leader ka tough interview chal raha hai.',
+    options: [
+      { text: 'Anchor ka agenda clear hai. Interview fair nahi tha.', habit: 'andhbhakt' },
+      { text: 'Main dekh raha hoon ki seedhe jawaab mile ya nahi.', habit: 'manifesto' },
+      { text: 'Poora interview dekhunga. Clips pe judge nahi karunga.', habit: 'factChecker' },
+      { text: 'Popcorn ready hai. Entertainment hai bhai.', habit: 'spectator' },
+    ],
   },
   {
-    prompt: 'Ek news channel tumhare favourite leader ko strongly criticise karta hai. Tum?',
-    options: ['Channel ka track record check karunga.', 'Criticism hai toh kuch toh baat hogi.', 'Pehle full statement aur context dekhunga.', 'Different credible sources compare karunga.'],
+    prompt: 'Jo kaam tumne pichhle saal doosri side ka galat bataya tha, wahi ab tumhari side kar rahi hai.',
+    options: [
+      { text: 'Tab bhi galat tha, ab bhi galat hai.', habit: 'independent' },
+      { text: 'Situation alag hai. Inki majboori samjho.', habit: 'chamcha' },
+      { text: 'Bade decisions ka logic baad mein samajh aata hai.', habit: 'andhbhakt' },
+      { text: 'Result dekh ke judge karunga. Kaam hua ya nahi, wahi matter karta hai.', habit: 'manifesto' },
+    ],
   },
   {
-    prompt: 'Jo kaam tumne opposition ka galat bola tha, wahi tumhari favourite party kar de. Tum?',
-    options: ['Dono ke liye same rules hone chahiye.', 'Situation different hogi, pehle context dekhunga.', 'Agar galat hai toh apni party ko bhi call out karunga.', 'Pehle samjhunga ki dono situations actually same hain ya nahi.'],
+    prompt: 'Tumhari preferred side election haar jaati hai.',
+    options: [
+      { text: 'Mujhe kya. Kal se office toh jaana hi hai.', habit: 'spectator' },
+      { text: 'Haar ke reasons aur kaam ka report card dekhna padega.', habit: 'manifesto' },
+      { text: 'Jeetne wale bhi kaunse dhoodh ke dhule hain.', habit: 'chamcha' },
+      { text: 'Main kisi side ko apna nahi maanta. Issue dekh ke vote karta hoon.', habit: 'independent' },
+    ],
   },
   {
-    prompt: 'Tumhari preferred party election haar jaati hai. First reaction?',
-    options: ['Public ne change choose kiya, reason samajhna chahiye.', 'Kuch gadbad lag rahi hai, evidence check karunga.', 'Apni party ki strategy aur performance review karunga.', 'Democracy mein result accept karke aage badhna chahiye.'],
+    prompt: 'Viral screenshot: "Leader X ne ye bola!" Koi source nahi.',
+    options: [
+      { text: 'Official handle aur original source check karta hoon.', habit: 'factChecker' },
+      { text: 'Sach ho ya na ho, funny hai. Share.', habit: 'spectator' },
+      { text: 'Doosri side ke leader ka hai? Phir toh sach hi hoga.', habit: 'chamcha' },
+      { text: 'Apni side ke leader ka hota toh bhi check karta. Toh ab bhi karunga.', habit: 'independent' },
+    ],
   },
   {
-    prompt: 'Ek policy tumhare group ko benefit karti hai, par doosre group ko nuksaan ho sakta hai. Tum?',
-    options: ['Overall impact dekhunga, sirf apna benefit nahi.', 'Benefit aur harm dono compare karunga.', 'Dekhenge ki doosre group ko kitna actual nuksaan hai.', 'Policy ke objectives aur alternatives samajhunga.'],
+    prompt: 'Nayi policy tumhe fayda deti hai, par kisi aur group ko nuksaan ho sakta hai.',
+    options: [
+      { text: 'Sirf apna nahi, dono taraf ka impact dekhunga.', habit: 'independent' },
+      { text: 'Dekhunga ye kis promise ka hissa thi aur iska target kya hai.', habit: 'manifesto' },
+      { text: 'Leader laaye hain toh long-term mein sabka fayda hi hoga.', habit: 'andhbhakt' },
+      { text: 'Mujhe fayda hai. Main debate mein kyun padun?', habit: 'spectator' },
+    ],
   },
   {
-    prompt: 'Aisi kya cheez hai jo tumhe apni favourite party ya leader par rethink karne par majboor karegi?',
-    options: ['Serious wrongdoing ka credible evidence.', 'Repeated broken promises aur poor performance.', 'Agar actions mere core values ke against jaayein.', 'Main har issue ko separately evaluate karunga.'],
+    prompt: 'Kya cheez tumhe apne favourite leader ya side par rethink karwa sakti hai?',
+    options: [
+      { text: 'Itne saal ka track record hai. Ek-do baat se opinion nahi badalta.', habit: 'andhbhakt' },
+      { text: 'Credible sources se solid evidence.', habit: 'factChecker' },
+      { text: 'Lagatar toote promises aur zameen pe kaam na dikhna.', habit: 'manifesto' },
+      { text: 'Mera koi permanent favourite hai hi nahi. Har issue alag.', habit: 'independent' },
+    ],
   },
 ];

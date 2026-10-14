@@ -1,5 +1,5 @@
 import { questions } from './questions.js';
-import { getResult } from './scoring.js';
+import { archetypes, getResult, rankHabits } from './scoring.js';
 
 const config = {
   brand: 'Bhakt Ya Chamcha?',
@@ -36,12 +36,12 @@ function renderLanding() {
     </section>
     <section class="intro-strip page-width">
       <div><span class="strip-number">01</span><h2>Ten questions.<br>One honest-ish result.</h2></div>
-      <p>Leader loyalty, source checking, accountability aur double standards. Yeh quiz kisi party ko judge nahi karta, bas tumhari political thinking ke patterns ko thoda mirror dikhata hai.</p>
+      <p>Leader loyalty, source checking, accountability aur double standards. Yahan "Bhakt" aur "Chamcha" kisi party ke supporters nahi, do aadatein hain: leader ko kabhi galat na maanna, aur apni side ko hamesha bachana. Ye dono kisi bhi side ke fan mein mil sakti hain.</p>
     </section>
     <section class="result-preview page-width">
-      <div class="section-heading"><p class="eyebrow">Possible outcomes</p><h2>Tumhari category kaunsi hai?</h2></div>
+      <div class="section-heading"><p class="eyebrow">Six possible results</p><h2>Tumhari category kaunsi hai?</h2></div>
       <div class="preview-grid">
-        <span>🪷 Andhbhakt Mode</span><span>🔎 Fact-Check Wala</span><span>⚖️ Manifesto Auditor</span><span>🧠 Independent Thinker</span>
+        ${Object.values(archetypes).map((a) => `<span>${a.emoji} ${a.title.replace(': ON', '')}</span>`).join('')}
       </div>
     </section>
     <section class="disclaimer page-width"><strong>Small disclaimer, big honesty:</strong> This is entertainment and reflection, not a scientific assessment of political beliefs or an endorsement of any political party.</section>
@@ -62,7 +62,7 @@ function renderQuiz() {
         <h1>${question.prompt}</h1>
         <fieldset class="options" aria-label="Answer choices">
           <legend class="sr-only">Choose one answer</legend>
-          ${question.options.map((option, index) => `<button class="option ${selected === index ? 'selected' : ''}" data-option="${index}" aria-pressed="${selected === index}"><span class="option-letter">${optionLetter(index)}</span><span>${option}</span></button>`).join('')}
+          ${question.options.map((option, index) => `<button class="option ${selected === index ? 'selected' : ''}" data-option="${index}" aria-pressed="${selected === index}"><span class="option-letter">${optionLetter(index)}</span><span>${option.text}</span></button>`).join('')}
         </fieldset>
         <div class="quiz-actions">
           <button class="button button-quiet" data-action="back" ${currentQuestion === 0 ? 'disabled' : ''}>← Back</button>
@@ -84,18 +84,22 @@ function renderQuiz() {
 }
 
 function renderResult() {
-  const { archetype, profile } = result;
+  const { archetype, runnerUp, counts, last } = result;
+  const breakdown = rankHabits(counts, last).filter((habit) => counts[habit] > 0).map((habit) => `
+        <li><span>${archetypes[habit].emoji} ${archetypes[habit].title.replace(': ON', '')}</span><span class="habit-bar" aria-hidden="true"><i style="width:${counts[habit] * 10}%"></i></span><b>${counts[habit]}/10</b></li>`).join('');
   app.innerHTML = `
     <section class="result-shell page-width">
-      <div class="result-header reveal"><p class="eyebrow">Your unofficial verdict</p><div class="result-emoji" aria-hidden="true">${archetype.emoji}</div><h1>${archetype.title}</h1><p class="result-subtitle">${archetype.subtitle}</p></div>
+      <div class="result-header reveal"><p class="eyebrow">Your unofficial verdict</p><div class="result-emoji" aria-hidden="true">${archetype.emoji}</div><h1>${archetype.title}</h1><p class="result-subtitle">${archetype.subtitle}</p>${runnerUp ? `<p class="runner-up">Thoda sa ${runnerUp.emoji} ${runnerUp.title.replace(': ON', '')} bhi.</p>` : ''}</div>
       <div class="result-grid">
         <article class="verdict-panel reveal"><p class="big-quote">“${archetype.description}”</p><div class="verdict-line">${archetype.verdict}</div></article>
         <div class="trait-stack reveal reveal-delay"><article><span>SUPERPOWER</span><p>${archetype.superpower}</p></article><article><span>BLIND SPOT</span><p>${archetype.weakness}</p></article></div>
       </div>
+      <div class="habit-breakdown reveal"><p class="eyebrow">Tumhare 10 jawaab, habit ke hisaab se</p><ul>${breakdown}
+      </ul></div>
       <div class="result-actions"><button class="button button-primary" data-action="share">Share My Result <span aria-hidden="true">↗</span></button><button class="button button-secondary" data-action="download-story">Download Story Card</button><button class="button button-secondary" data-action="download-feed">Download Feed Card</button><button class="button button-quiet" data-action="challenge">Challenge a Friend</button></div>
       <p class="result-note">Your answers stay in this browser. The result is for entertainment, not a diagnosis or a claim about your political affiliation.</p>
       <div class="result-footer-actions"><button class="text-button" data-action="restart">Take the quiz again</button><button class="text-button" data-action="method">How is this decided?</button></div>
-      <div class="method-note" hidden><strong>Transparent, not scientific.</strong> Each answer contributes to loyalty bias, critical evaluation, and engagement style. The full pattern is compared with defined thresholds; no single answer decides your result.</div>
+      <div class="method-note" hidden><strong>Transparent, not scientific.</strong> Har jawaab ek habit se juda hai. Jo habit tumne sabse zyada choose ki, wahi tumhara result hai, aur doosri sabse common habit bhi dikhayi jaati hai. Tie hone par jo habit tumne sabse last mein choose ki, wo jeet-ti hai. Koi party, leader ya personal data involved nahi.</div>
     </section>
   `;
   app.querySelector('[data-action="share"]').addEventListener('click', shareResult);
