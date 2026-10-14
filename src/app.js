@@ -3,7 +3,7 @@ import { archetypes, getResult, rankHabits } from './scoring.js';
 
 // Set SITE_URL to the production address (e.g. 'https://bhaktyachamcha.in') before launch.
 // Until then the current page origin is used.
-const SITE_URL = '';
+const SITE_URL = 'https://24209011124.github.io/meter';
 
 const config = {
   brand: 'Bhakt Ya Chamcha?',
