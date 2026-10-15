@@ -1,9 +1,9 @@
 // When you change any file under src/, bump the ?v= value here, in scoring.js and in index.html
 // (tests/scoring.test.js checks they all match) so returning visitors never mix old and new files.
-import { englishQuestions, questions } from './questions.js?v=2026-10-18';
-import { archetypes, chances, getResult, rankHabits } from './scoring.js?v=2026-10-18';
-import { cardKicker, personalResult, shareFlavour } from './personal.js?v=2026-10-18';
-import { CUSTOM_NAME_MAX, cleanName, customSymbols, fillTokens, findParty, initials, neutralChoices, parties, personalWords } from './parties.js?v=2026-10-18';
+import { englishQuestions, questions } from './questions.js?v=2026-10-19';
+import { archetypes, chances, getResult, rankHabits } from './scoring.js?v=2026-10-19';
+import { cardKicker, personalResult, shareFlavour } from './personal.js?v=2026-10-19';
+import { CUSTOM_NAME_MAX, cleanName, customSymbols, fillTokens, findParty, initials, neutralChoices, parties, personalWords } from './parties.js?v=2026-10-19';
 
 // Public address used in share messages and on result cards.
 const SITE_URL = 'https://andhbhaktyachamcha.in';
@@ -18,6 +18,14 @@ const colours = {
   jamun: '#2a0a3b', chalk: '#fff7fb', haldi: '#ffc531', rani: '#cf0a6c',
   andhbhakt: '#ff7eb6', chamcha: '#ffc531', factChecker: '#3fd6b4', spectator: '#ff8a5c', manifesto: '#b9a3ff', independent: '#6fd3ff',
 };
+
+// Privacy-safe counting through the Google Analytics tag already on the page.
+// ONLY these event names, and never answers, results, party or leader. tests/scoring.test.js enforces this.
+const TRACKED_EVENTS = ['quiz_start', 'team_pick', 'quiz_complete', 'share', 'instagram_click'];
+function track(name, params = {}) {
+  if (!TRACKED_EVENTS.includes(name)) return;
+  try { window.gtag?.('event', name, params); } catch { /* analytics blocked or not loaded */ }
+}
 
 const app = document.querySelector('#app');
 let answers = [];
@@ -66,11 +74,10 @@ function renderLanding() {
         <div class="hero page-width">
           <div>
             <h1><span>Andhbhakt Ya</span><span>Chamcha?</span></h1>
-            <p class="hero-lede">7 sawaal. Ek political reality check. Phir pata chalega group chat mein asli Bhakt, Chamcha aur Fact-Checker kaun hai. 👀</p>
-            ${languageToggle()}
-            <button class="button button-primary button-big" data-action="start">Chalo, Reality Check Lo 🔥</button>
-            <p class="oath"><span aria-hidden="true">🤚</span> <em>"Jo kahunga sach kahunga, sach ke siwa kuch nahi kahunga."</em><small>Haath dil pe, phone haath mein. 📱😂</small></p>
-            <p class="hero-note">2 minute. Koi signup nahi. Tumhare jawaab kahin save nahi hote.</p>
+            <p class="hero-lede">${t('Har group chat mein ek Andhbhakt hota hai, ek Chamcha. Kahin woh tum toh nahi? 👀', 'Every group chat has one Andhbhakt and one Chamcha. Is it you? 👀')}</p>
+            <button class="button button-primary button-big" data-action="start">${t('Pata karo 👀', 'Find out 👀')}</button>
+            <p class="oath"><span aria-hidden="true">🤚</span> <em>"Jo kahunga sach kahunga, sach ke siwa kuch nahi kahunga."</em><small>${t('Haath dil pe, phone haath mein. 📱😂', 'Hand on heart, phone in hand. 📱😂')}</small></p>
+            <p class="hero-note">${t('2 minute. Koi login nahi. Kuch save nahi hota.', '2 minutes. No login. Nothing is saved.')} <button class="lang-link" data-language="${language === 'english' ? 'hinglish' : 'english'}">${language === 'english' ? 'Hinglish mein khelo' : 'Play in English'}</button></p>
           </div>
           <div class="ticket-stack" aria-hidden="true">
             ${fan.map((a) => `<div class="ticket c-${a.id}"><div class="ticket-emoji">${a.emoji}</div><h3>${shortTitle(a)}</h3><p>${a.subtitle}</p></div>`).join('')}
@@ -80,29 +87,29 @@ function renderLanding() {
       </section>
 
       <section class="steps page-width" aria-labelledby="steps-title">
-        <h2 id="steps-title">Kaise kaam karta hai</h2>
+        <h2 id="steps-title">${t('Khelna simple hai', 'How it works')}</h2>
         <ol>
-          <li><strong>7 sawaal ka jawaab do</strong><p>Political situations jo har group chat mein hoti hain. Sach sach chuno.</p></li>
-          <li><strong>Apni habit dekho</strong><p>Tumhare answers ka pattern decide karega tumhara result. Phir milega tumhara political personality roast. 😂</p></li>
-          <li><strong>Dost ko challenge karo</strong><p>Apna result share karo, dost ko challenge karo. Dekhte hain kaun apna result accept karta hai aur kaun appeal file karta hai. 😂</p></li>
+          <li><strong>${t('Party chuno, ya apni bana lo', 'Pick a party, or make your own')}</strong><p>${t('Dost ko supreme leader bana do. Koi rok nahi raha. 😄', 'Make your friend the supreme leader. Nobody is stopping you. 😄')}</p></li>
+          <li><strong>${t('7 sawaal, sach sach', '7 questions, be honest')}</strong><p>${t('Family WhatsApp se lekar TV debate tak.', 'From family WhatsApp to TV debates.')}</p></li>
+          <li><strong>${t('Result dost ko bhejo', 'Send your result')}</strong><p>${t('Phir dekho kaun appeal karta hai. 😂', 'Then see who files an appeal. 😂')}</p></li>
         </ol>
       </section>
 
       <section class="results-intro page-width" aria-labelledby="results-title">
-        <h2 id="results-title">6 Categories. Ek Tum. Kaunsi Wali? 👀</h2>
-        <p>Har result ek political aadat hai. Kisi bhi party ka fan inme se koi bhi ho sakta hai.</p>
+        <h2 id="results-title">${t('6 type ke log. Tum kaunse?', '6 kinds of people. Which one are you?')}</h2>
+        <p>${t('Har group chat mein milte hain.', 'You will find them in every group chat.')}</p>
         <div class="result-tiles">
           ${Object.values(archetypes).map((a) => `<article class="result-tile c-${a.id}"><div class="tile-emoji" aria-hidden="true">${a.emoji}</div><div><h3>${shortTitle(a)}</h3><p>${a.subtitle}</p></div></article>`).join('')}
         </div>
         <div class="habit-note">
           <div class="note-emoji" aria-hidden="true">🤝</div>
-          <div><strong>Andhbhakt aur Chamcha yahan party nahi, aadatein hain.</strong><p>Andhbhakt matlab "mera leader galat ho hi nahi sakta." Chamcha matlab "meri side galat ho hi nahi sakti." Ye dono kisi bhi side ke supporter mein mil sakti hain. Ye quiz kisi party ko judge nahi karta.</p></div>
+          <div><strong>${t('Party nahi, aadat.', 'Habits, not parties.')}</strong><p>${t('Andhbhakt aur Chamcha kisi bhi party mein mil jaate hain. Quiz aadat pakadta hai, party nahi.', 'Andhbhakts and Chamchas exist in every party. The quiz looks at habits, not parties.')}</p></div>
         </div>
       </section>
 
       <section class="landing-cta page-width">
-        <h2>Ab apni baari. Dekhte hain tumhara dimaag kis side hai. 👀</h2>
-        <button class="button button-primary button-big" data-action="start">Mera Result Batao 🔥</button>
+        <h2>${t('Toh ho jaaye?', 'Shall we?')}</h2>
+        <button class="button button-primary button-big" data-action="start">${t('Quiz shuru karo', 'Start the quiz')}</button>
       </section>
     </div>
   `;
@@ -112,8 +119,8 @@ function renderLanding() {
 
 
 const privacyLine = () => t(
-  'Ye score mein count nahi hota. Bas sawaal tumhari situation ke hisaab se dikhenge. Tumhara jawaab kahin save ya send nahi hota.',
-  'This is not scored. It only makes the questions match your situation. Your choice is never saved or sent anywhere.'
+  'Score mein count nahi hota, kahin save bhi nahi hota. Bas sawaal tumhari team ke hisaab se aayenge.',
+  'Not scored, never saved. It just makes the questions about your team.'
 );
 
 function renderParty() {
@@ -144,7 +151,7 @@ function renderParty() {
       <div class="neutral-row">
         ${neutralChoices.map((choice) => `<button class="neutral-chip ${current === choice.id ? 'selected' : ''}" data-party="${choice.id}" aria-pressed="${current === choice.id}"><span aria-hidden="true">${choice.emoji}</span> ${choice.label[L()]}</button>`).join('')}
       </div>
-      <p class="pick-small">${t('Party symbols yahan sirf emoji hain, official logo nahi. Ye site kisi party se judi nahi hai.', 'Party symbols here are just emoji, not official logos. This site is not linked to any party.')}</p>
+      <p class="pick-small">${t('Symbols sirf emoji hain, asli logo nahi. Ye site kisi party se judi nahi hai.', 'Symbols are just emoji, not real logos. This site is not linked to any party.')}</p>
     </section>
   `;
   bindLanguageToggle();
@@ -152,6 +159,7 @@ function renderParty() {
   app.querySelector('[data-action="custom-party"]').addEventListener('click', renderCustomParty);
   app.querySelectorAll('[data-party]').forEach((button) => button.addEventListener('click', () => {
     const partyId = button.dataset.party;
+    track('team_pick', { team: findParty(partyId) ? 'real_party' : 'no_party' });
     const party = findParty(partyId);
     preference = { partyId, leader: preference?.partyId === partyId ? preference.leader : null };
     if (party && party.leaders.length) renderLeader();
@@ -199,6 +207,7 @@ function renderCustomParty() {
     const party = cleanName(app.querySelector('#custom-party').value) || t('Meri Party', 'My Party');
     const leader = cleanName(app.querySelector('#custom-leader').value);
     preference = { partyId: 'custom', leader: leader || null, custom: { party, leader, symbol } };
+    track('team_pick', { team: 'custom' });
     beginQuestions();
   };
   app.querySelector('[data-action="launch"]').addEventListener('click', launch);
@@ -274,7 +283,6 @@ function renderQuiz() {
   app.innerHTML = `
     <section class="quiz-shell page-width" aria-labelledby="question-title">
       <div class="quiz-top"><span>${language === 'english' ? 'Question' : 'Sawaal'} ${currentQuestion + 1} / ${activeQuestions().length}</span><button class="text-button" data-action="home">${language === 'english' ? 'Exit' : 'Band karo'}</button></div>
-      ${languageToggle()}
       <div class="progress-dots" role="progressbar" aria-valuemin="1" aria-valuemax="${activeQuestions().length}" aria-valuenow="${currentQuestion + 1}" aria-label="Quiz progress">
         ${activeQuestions().map((_, index) => `<i class="${index < currentQuestion ? 'done' : index === currentQuestion ? 'current' : ''}"></i>`).join('')}
       </div>
@@ -291,7 +299,7 @@ function renderQuiz() {
           <button class="text-button" data-action="back" ${currentQuestion === 0 ? 'hidden' : ''}>${language === 'english' ? 'Previous question' : 'Pichhla sawaal'}</button>
           ${selected !== undefined
             ? `<button class="button button-primary" data-action="next">${isLast ? (language === 'english' ? 'Show my result' : 'Result dikhao') : (language === 'english' ? 'Next question' : 'Agla sawaal')}</button>`
-            : `<span class="quiz-hint">${language === 'english' ? 'Choose an answer to continue' : 'Jawaab chunte hi agla sawaal aayega'}</span>`}
+            : `<span class="quiz-hint">${language === 'english' ? 'Tap an answer' : 'Jawaab pe tap karo'}</span>`}
         </div>
       </div>
     </section>
@@ -320,7 +328,7 @@ function chooseOption(index) {
 
 function goForward() {
   if (answers[currentQuestion] === undefined) return;
-  if (currentQuestion === questions.length - 1) { result = getResult(answers); renderResult(); return; }
+  if (currentQuestion === questions.length - 1) { result = getResult(answers); track('quiz_complete'); renderResult(); return; }
   currentQuestion += 1;
   renderQuiz();
   focusQuestion();
@@ -330,76 +338,64 @@ function renderResult() {
   setPage('result');
   const { archetype, runnerUp, counts, evidence } = result;
   const breakdown = rankHabits(counts, evidence).filter((habit) => counts[habit] > 0).map((habit) => `
-    <li><span>${archetypes[habit].emoji} ${shortTitle(archetypes[habit])}</span><span class="habit-bar" aria-hidden="true"><i class="c-${habit}" style="width:${Math.round((counts[habit] / chances[habit]) * 100)}%"></i></span><span>${counts[habit]} / ${chances[habit]} mauke</span></li>`).join('');
+    <li><span>${archetypes[habit].emoji} ${shortTitle(archetypes[habit])}</span><span class="habit-bar" aria-hidden="true"><i class="c-${habit}" style="width:${Math.round((counts[habit] / chances[habit]) * 100)}%"></i></span><span>${counts[habit]}/${chances[habit]}</span></li>`).join('');
   const waLink = `https://wa.me/?text=${encodeURIComponent(shareText())}`;
+  const kicker = cardKicker(preference, L());
+  const canShareImage = canShareFiles();
   app.innerHTML = `
-    <section class="result-band c-${archetype.id}">
-      <div class="result-hero page-width">
-        <p class="result-kicker">Tumhara verdict aa gaya</p>
-        <div class="result-emoji" aria-hidden="true">${archetype.emoji}</div>
-        <h1 tabindex="-1">${archetype.title}</h1>
-        <p class="result-subtitle">${archetype.subtitle}</p>
-        ${runnerUp ? `<p class="runner-up">Thoda sa ${runnerUp.emoji} ${shortTitle(runnerUp)} bhi.</p>` : ''}
-        <div class="stamp" aria-hidden="true">Unofficial<br>verdict</div>
+    <section class="result-stage c-${archetype.id}">
+      <div class="page-width">
+        <article class="result-card" aria-labelledby="result-title">
+          <div class="rc-top"><span class="rc-brand">Andhbhakt Ya Chamcha?</span><span class="rc-stamp" aria-hidden="true">Unofficial<br>verdict</span></div>
+          <div class="result-emoji" aria-hidden="true">${archetype.emoji}</div>
+          <p class="rc-kicker">${kicker ? escapeHtml(kicker.replace(/:$/, '')) : t('Mera result', 'My result')}</p>
+          <h1 id="result-title" tabindex="-1">${archetype.title}</h1>
+          <p class="rc-roast">“${archetype.description}”</p>
+          <p class="rc-url">andhbhaktyachamcha.in</p>
+        </article>
+        <div class="result-actions">
+          ${canShareImage
+            ? `<button class="button button-primary button-big" data-action="share-card">${t('Story pe lagao 📲', 'Post to Story 📲')}</button>`
+            : `<button class="button button-primary button-big" data-action="download-story">${t('Image save karo 📲', 'Save image 📲')}</button>`}
+          <div class="result-actions-row">
+            <a class="button button-whatsapp" href="${waLink}" target="_blank" rel="noopener" data-track="whatsapp">${t('WhatsApp pe bhejo', 'Send on WhatsApp')}</a>
+            <button class="button button-plain" data-action="challenge">${t('Dost ko bhejo 😏', 'Dare a friend 😏')}</button>
+          </div>
+        </div>
       </div>
     </section>
-    <section class="result-body page-width">
-      <div class="roast">
-        <blockquote>“${archetype.description}”</blockquote>
-        <p>${archetype.verdict}</p>
-      </div>
+
+    <section class="result-more page-width">
       ${teamVerdict(archetype)}
-      <div class="traits">
-        <article class="trait-good"><h2>Superpower</h2><p>${archetype.superpower}</p></article>
-        <article class="trait-blind"><h2>Blind spot</h2><p>${archetype.weakness}</p></article>
-      </div>
-
-      <div class="share-box">
-        <h2>Ab group mein bhejo</h2>
-        <p>Result card Status pe lagao, aur dekho kaun appeal file karta hai. 😂</p>
-        <div class="share-row">
-          ${canShareFiles() ? '<button class="button button-whatsapp" data-action="share-card">Status pe lagao</button>' : ''}
-          <a class="button ${canShareFiles() ? 'button-plain' : 'button-whatsapp'}" href="${waLink}" target="_blank" rel="noopener">WhatsApp pe bhejo</a>
-          <button class="button button-primary" data-action="challenge">Dost ko challenge karo</button>
-          ${canShareFiles() ? '' : `<button class="button button-plain" data-action="share">${navigator.share ? 'Kahin aur share karo' : 'Result copy karo'}</button>`}
+      <details class="result-details">
+        <summary>${t('Thoda aur jaano', 'More about your result')}</summary>
+        <p class="rd-verdict">${archetype.verdict}</p>
+        ${runnerUp ? `<p class="rd-runner">${t('Thoda sa', 'A bit of')} ${runnerUp.emoji} ${shortTitle(runnerUp)} ${t('bhi.', 'too.')}</p>` : ''}
+        <div class="traits">
+          <article class="trait-good"><h2>Superpower</h2><p>${archetype.superpower}</p></article>
+          <article class="trait-blind"><h2>Blind spot</h2><p>${archetype.weakness}</p></article>
         </div>
-        <div class="instagram-cta">
-          <p>Daily political satire ke liye Instagram pe follow karo 👀</p>
-          <a class="button button-instagram" href="${INSTAGRAM_URL}" target="_blank" rel="noopener noreferrer">Instagram pe follow karo</a>
+        <div class="habit-breakdown">
+          <h2>${t('Kaunsi aadat kitni baar', 'Your answers by habit')}</h2>
+          <ul>${breakdown}</ul>
+          <p class="rd-method">${t('Har jawaab ek aadat se juda hai. Jo aadat tumne sabse zyada chuni (mile hue mauke ke hisaab se), wahi result. Scientific nahi, bas mazaak.', 'Each answer maps to a habit. The habit you picked most (for the chances it had) is your result. Not science, just fun.')}</p>
         </div>
-        <div class="card-row">
-          <span>Result card download karo:</span>
-          <button class="text-button" data-action="download-story">Status / Story size</button>
-          <button class="text-button" data-action="download-feed">Instagram post size</button>
-        </div>
+      </details>
+      <div class="result-links">
+        <button class="text-button" data-action="restart">${t('Dobara khelo', 'Play again')}</button>
+        <a class="text-button" href="${INSTAGRAM_URL}" target="_blank" rel="noopener noreferrer" data-track="instagram">${t('Aise aur memes: Instagram', 'More memes on Instagram')}</a>
+        <span class="result-downloads">${t('Image:', 'Image:')} <button class="text-button" data-action="download-story">Story</button> <button class="text-button" data-action="download-feed">Post</button></span>
       </div>
-
-      <div class="habit-breakdown">
-        <h2>Tumhare ${questions.length} jawaab</h2>
-        <p>Har habit ko kuch mauke mile. Tumne kitni baar kaunsi chuni, ye raha poora hisaab.</p>
-        <ul>${breakdown}</ul>
-      </div>
-
-      <div class="result-footer-actions">
-        <button class="text-button" data-action="restart">Quiz dobara do</button>
-        <button class="text-button" data-action="method" aria-expanded="false">Result kaise decide hota hai?</button>
-      </div>
-      <div class="method-note" hidden><strong>Transparent hai, scientific nahi.</strong> Har jawaab ek habit dikhata hai. Har habit quiz mein 4 ya 5 baar option ke roop mein aati hai, isliye hum dekhte hain ki tumne har habit ke kitne mauke liye. Jo habit tumne sabse zyada (share mein) chuni, wahi result. Barabar hone par, jis habit ka sabse clear "signature" jawab tumne chuna, wo jeet-ti hai. Koi party, leader ya personal data involved nahi.</div>
-      <p class="result-note">Ye result entertainment ke liye hai. Ye tumhari political affiliation ke baare mein koi claim nahi karta.</p>
+      <p class="result-note">${t('Sirf mazaak ke liye. Tumhare jawaab kahin save nahi hote.', 'Just for fun. Your answers are never saved.')}</p>
     </section>
   `;
   app.querySelector('h1').focus({ preventScroll: true });
-  app.querySelector('[data-action="share"]')?.addEventListener('click', shareResult);
   app.querySelector('[data-action="share-card"]')?.addEventListener('click', shareCard);
   app.querySelector('[data-action="challenge"]').addEventListener('click', shareChallenge);
-  app.querySelector('[data-action="download-story"]').addEventListener('click', () => downloadCard('story'));
+  app.querySelectorAll('[data-action="download-story"]').forEach((button) => button.addEventListener('click', () => downloadCard('story')));
   app.querySelector('[data-action="download-feed"]').addEventListener('click', () => downloadCard('feed'));
   app.querySelector('[data-action="restart"]').addEventListener('click', restart);
-  app.querySelector('[data-action="method"]').addEventListener('click', (event) => {
-    const note = app.querySelector('.method-note');
-    note.hidden = !note.hidden;
-    event.currentTarget.setAttribute('aria-expanded', String(!note.hidden));
-  });
+  app.querySelectorAll('[data-track]').forEach((link) => link.addEventListener('click', () => track(link.dataset.track === 'instagram' ? 'instagram_click' : 'share', link.dataset.track === 'instagram' ? {} : { method: 'whatsapp' })));
 }
 
 function teamVerdict(archetype) {
@@ -409,7 +405,7 @@ function teamVerdict(archetype) {
       <div class="team-verdict">
         <div class="team-badge" aria-hidden="true">${escapeHtml(personal.symbol)}</div>
         <div>
-          <p class="team-label">${escapeHtml(personal.team)}${personal.leader ? ` · ${escapeHtml(personal.leader)}` : ''} ${t('wala verdict', 'edition')}</p>
+          <p class="team-label">${escapeHtml(personal.team)}${personal.leader ? ` · ${escapeHtml(personal.leader)}` : ''} ${t('special', 'special')}</p>
           <p class="team-line">${escapeHtml(personal.line)}</p>
           ${personal.extra ? `<p class="team-extra">${escapeHtml(personal.extra)}</p>` : ''}
         </div>
@@ -419,9 +415,9 @@ function teamVerdict(archetype) {
 function shareText() {
   const { archetype } = result;
   const flavour = shareFlavour(preference, L());
-  return `${flavour ? `${flavour}\n` : ''}Mera result: ${archetype.emoji} *${archetype.title}*\n"${archetype.description}" 😂\n\nTu kya niklega? Andhbhakt, Chamcha ya kuch aur?\n${questions.length} sawaal, 2 minute: ${config.url}`;
+  return `${flavour ? `${flavour}\n` : ''}Mera result: ${archetype.emoji} *${archetype.title}* 😭\n"${archetype.description}"\n\nTumhara kya aata hai? 👉 ${config.url}`;
 }
-function challengeText() { return `Bhai, ek political reality check de. Main toh ${result.archetype.emoji} ${shortTitle(result.archetype)} nikla. Tu kya niklega? 😏\nResult screenshot karke bhejna, cheating nahi.\n${config.url}`; }
+function challengeText() { return `Ek quiz kar ke dekh 😏\nMera ${result.archetype.emoji} ${shortTitle(result.archetype)} aaya. Tera kya aata hai?\n👉 ${config.url}`; }
 
 async function shareOrCopy(text, copiedMessage) {
   if (navigator.share) {
@@ -429,8 +425,7 @@ async function shareOrCopy(text, copiedMessage) {
   }
   try { await navigator.clipboard.writeText(text); showToast(copiedMessage); } catch { showToast('Copy nahi ho paya. Link: ' + displayUrl()); }
 }
-const shareResult = () => shareOrCopy(shareText(), 'Result copy ho gaya. Ab group mein paste karo.');
-const shareChallenge = () => shareOrCopy(challengeText(), 'Challenge copy ho gaya. Dost ko bhejo.');
+const shareChallenge = () => { track('share', { method: 'challenge' }); return shareOrCopy(challengeText(), t('Message copy ho gaya. Dost ko paste karo.', 'Message copied. Paste it to a friend.')); };
 
 function showToast(message) {
   document.querySelector('.toast')?.remove();
@@ -506,7 +501,7 @@ export function drawCard(canvas, archetype, format, url, kicker = null) {
   // Kicker
   let y = L.emojiY + L.r + L.gapKicker;
   ctx.font = `600 ${L.kicker}px Hind, sans-serif`;
-  let kickerSize = L.kicker; const kickerText = kicker || 'Mera political verdict:';
+  let kickerSize = L.kicker; const kickerText = kicker || 'Mera result:';
   for (;;) { ctx.font = `600 ${kickerSize}px Hind, sans-serif`; if (ctx.measureText(kickerText).width <= W - pad * 2 || kickerSize <= 26) break; kickerSize -= 2; }
   ctx.fillText(kickerText, cx, y);
 
@@ -522,7 +517,7 @@ export function drawCard(canvas, archetype, format, url, kicker = null) {
   // Footer: call to action and URL pill (fixed position)
   const pillTop = L.footer + 26;
   ctx.font = `700 ${L.cta}px Hind, sans-serif`;
-  ctx.fillText('Tu kya niklega? 2 minute ka quiz:', cx, L.footer);
+  ctx.fillText('Tumhara result kya hai? 2 minute ka quiz:', cx, L.footer);
   ctx.font = `${L.url}px "Yatra One", serif`;
   const pillW = Math.min(W - pad * 2, ctx.measureText(url).width + 90);
   stickerRect(ctx, cx - pillW / 2, pillTop, pillW, L.pill, L.pill / 2, archetype.id === 'chamcha' ? colours.chalk : colours.haldi, 10);
@@ -558,6 +553,7 @@ function canShareFiles() {
 }
 
 async function shareCard() {
+  track('share', { method: 'story_image' });
   const canvas = await renderCard('story');
   const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
   const file = new File([blob], cardName('story'), { type: 'image/png' });
@@ -574,10 +570,11 @@ async function downloadCard(format) {
   link.download = cardName(format);
   link.href = canvas.toDataURL('image/png');
   link.click();
-  showToast('Card download ho gaya. Ab Status pe lagao.');
+  track('share', { method: `download_${format}` });
+  showToast(t('Image save ho gayi. Ab Story pe lagao 📲', 'Image saved. Post it to your Story 📲'));
 }
 
-function startQuiz() { answers = []; currentQuestion = 0; result = null; resumeQuestion = null; renderParty(); }
+function startQuiz() { answers = []; currentQuestion = 0; result = null; resumeQuestion = null; track('quiz_start'); renderParty(); }
 function beginQuestions() {
   if (resumeQuestion !== null) { currentQuestion = resumeQuestion; resumeQuestion = null; }
   renderQuiz();

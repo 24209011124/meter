@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { englishQuestions, questions } from '../src/questions.js?v=2026-10-18';
-import { archetypes, chances, countHabits, getResult } from '../src/scoring.js?v=2026-10-18';
-import { cleanName, fillTokens, findParty, parties, personalWords } from '../src/parties.js?v=2026-10-18';
-import { SHARE_REAL_PARTIES, cardKicker, personalResult, shareFlavour } from '../src/personal.js?v=2026-10-18';
+import { englishQuestions, questions } from '../src/questions.js?v=2026-10-19';
+import { archetypes, chances, countHabits, getResult } from '../src/scoring.js?v=2026-10-19';
+import { cleanName, fillTokens, findParty, parties, personalWords } from '../src/parties.js?v=2026-10-19';
+import { SHARE_REAL_PARTIES, cardKicker, personalResult, shareFlavour } from '../src/personal.js?v=2026-10-19';
 
 const habits = Object.keys(archetypes);
 const allAnswerSets = function* () {
@@ -129,9 +129,18 @@ for (const p of parties) {
 }
 // The app never writes the preference to storage, the URL or analytics.
 const appSource = readFileSync(new URL('../src/app.js', import.meta.url), 'utf8');
-for (const forbidden of ['localStorage', 'sessionStorage', 'gtag(', 'dataLayer', 'history.pushState', 'location.hash', 'document.cookie']) {
+for (const forbidden of ['localStorage', 'sessionStorage', 'dataLayer', 'history.pushState', 'location.hash', 'document.cookie']) {
   assert.ok(!appSource.includes(forbidden), `app.js must not use ${forbidden}`);
 }
+// Analytics: exactly one gtag call (inside track), and track() only ever sends whitelisted, non-political data.
+assert.equal(appSource.split('gtag?.(').length - 1, 1, 'gtag only inside track()');
+const trackCalls = [...appSource.matchAll(/track\(([^;]*?)\)(?:;|\)|\s)/g)].map((m) => m[1]).filter((args) => !args.startsWith('name'));
+for (const args of trackCalls) {
+  for (const word of ['preference', 'answers', 'archetype', 'leader', 'party.', 'custom.', 'counts', 'result.']) {
+    assert.ok(!args.includes(word), `track() must not send ${word}: track(${args})`);
+  }
+}
+assert.ok(trackCalls.length >= 6, 'Counting is wired up');
 
 // ---- Personalised results ----
 for (const id of Object.keys(archetypes)) {

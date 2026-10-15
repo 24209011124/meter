@@ -339,3 +339,47 @@ body.is-landing .site-header, body.is-landing .header-note { color: var(--chalk)
 .team-line { margin-top: 6px; font-family: var(--display); font-size: clamp(1.25rem, 3vw, 1.6rem); line-height: 1.2; }
 .team-extra { margin-top: 10px; font-weight: 600; }
 @media (max-width: 600px) { .team-verdict { grid-template-columns: 1fr; padding: 18px; } .team-badge { width: 60px; height: 60px; font-size: 1.9rem; } }
+
+/* ---------- Landing: language link ---------- */
+.lang-link { margin-left: 6px; padding: 0; border: 0; background: none; color: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+
+/* ---------- Result: story-ready card ---------- */
+.result-stage { padding: 28px 0 40px; border-bottom: var(--edge); }
+.result-card { position: relative; max-width: 440px; margin: 0 auto; padding: 22px 24px 18px; border: var(--edge); border-radius: var(--r-panel); background: var(--chalk); box-shadow: 8px 8px 0 var(--jamun); text-align: center; }
+.rc-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; text-align: left; }
+.rc-brand { font-family: var(--display); font-size: 1.1rem; }
+.rc-stamp { flex: 0 0 auto; display: grid; place-items: center; width: 70px; height: 70px; margin: -6px -6px 0 0; border: 3px double var(--jamun); border-radius: 50%; font-family: var(--display); font-size: .72rem; line-height: 1.05; rotate: 12deg; }
+.result-card .result-emoji { width: 112px; height: 112px; margin: 0 auto; font-size: 3.8rem; box-shadow: var(--lift-sm); }
+.rc-kicker { margin-top: 18px; font-weight: 700; }
+.result-card h1 { margin-top: 6px; font-size: clamp(2.6rem, 11vw, 3.6rem); line-height: 1; }
+.rc-roast { margin: 16px 0 0; font-family: var(--display); font-size: 1.3rem; line-height: 1.25; }
+.rc-url { margin-top: 18px; padding-top: 12px; border-top: 2px dashed var(--jamun); font-weight: 700; font-size: .95rem; }
+.result-actions { max-width: 440px; margin: 26px auto 0; display: grid; gap: 12px; }
+.result-actions .button-big { width: 100%; }
+.result-actions-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.result-actions-row .button { width: 100%; padding: 0 12px; font-size: .98rem; }
+.result-more { max-width: 760px; padding: 32px 0 80px; }
+.result-more .team-verdict { margin-top: 0; }
+.result-details { margin-top: 22px; border: var(--edge); border-radius: var(--r-card); background: #fff; }
+.result-details summary { padding: 16px 20px; font-weight: 700; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+.result-details summary::-webkit-details-marker { display: none; }
+.result-details summary::after { content: '+'; font-family: var(--display); font-size: 1.6rem; line-height: 1; }
+.result-details[open] summary::after { content: '−'; }
+.result-details > :not(summary) { margin-left: 20px; margin-right: 20px; }
+.result-details .habit-breakdown { margin-top: 22px; margin-bottom: 20px; }
+.rd-verdict { margin-top: 0; }
+.rd-runner { margin-top: 10px; font-weight: 700; }
+.rd-method { margin-top: 14px; font-size: .9rem; color: var(--jamun-soft); }
+.result-links { margin-top: 26px; display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px; }
+.result-downloads { font-weight: 600; }
+.result-downloads .text-button { margin-left: 6px; }
+.result-more .result-note { margin-top: 18px; }
+@media (max-width: 600px) {
+  .result-stage { padding: 18px 0 30px; }
+  .result-card { padding: 18px 18px 14px; }
+  .rc-roast { font-size: 1.15rem; }
+}
+.result-actions .button-primary { background: var(--jamun); color: var(--chalk); box-shadow: 5px 5px 0 var(--chalk); }
+.result-actions .button-primary:active:not(:disabled) { box-shadow: 1px 1px 0 var(--chalk); }
+@media (hover: hover) { .result-actions .button-primary:hover:not(:disabled) { box-shadow: 6px 6px 0 var(--chalk); } }
+.result-actions .button-primary:focus-visible { outline-color: var(--chalk); }
