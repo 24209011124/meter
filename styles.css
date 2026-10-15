@@ -315,3 +315,19 @@ body.is-landing .site-header, body.is-landing .header-note { color: var(--chalk)
   .team-chip { border-radius: var(--r-card); }
   .oath { font-size: .98rem; }
 }
+
+/* ---------- Apni party banao ---------- */
+.party-card.custom-card { grid-column: 1 / -1; background: var(--haldi); border-style: dashed; }
+.party-card.custom-card .party-short { font-size: 1.4rem; }
+.party-card.custom-card .party-name { color: var(--jamun); }
+.custom-form { max-width: 560px; margin: 0 auto; display: grid; gap: 10px; }
+.custom-form label, .custom-label { margin-top: 8px; font-weight: 700; }
+.custom-form input { min-height: 56px; padding: 0 16px; border: var(--edge); border-radius: var(--r-card); background: #fff; color: var(--jamun); font: inherit; font-size: 1.1rem; }
+.custom-form input:focus-visible { outline: 3px solid var(--rani); outline-offset: 2px; }
+.symbol-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.symbol-choice { width: 56px; height: 56px; border: var(--edge); border-radius: 50%; background: #fff; font-size: 1.7rem; line-height: 1; }
+.symbol-choice.selected { background: var(--haldi); box-shadow: var(--lift-sm); transform: translate(-2px, -2px); }
+.custom-form .button-big { margin-top: 18px; }
+@media (max-width: 760px) { .custom-form .button-big { width: 100%; } .symbol-choice { width: 50px; height: 50px; } }
+.scene-sticker > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 760px) { .scene-sticker { max-width: 48%; } }

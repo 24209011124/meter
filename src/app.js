@@ -1,8 +1,8 @@
 // When you change any file under src/, bump the ?v= value here, in scoring.js and in index.html
 // (tests/scoring.test.js checks they all match) so returning visitors never mix old and new files.
-import { englishQuestions, questions } from './questions.js?v=2026-10-17';
-import { archetypes, chances, getResult, rankHabits } from './scoring.js?v=2026-10-17';
-import { fillTokens, findParty, initials, neutralChoices, parties, personalWords } from './parties.js?v=2026-10-17';
+import { englishQuestions, questions } from './questions.js?v=2026-10-18';
+import { archetypes, chances, getResult, rankHabits } from './scoring.js?v=2026-10-18';
+import { CUSTOM_NAME_MAX, cleanName, customSymbols, fillTokens, findParty, initials, neutralChoices, parties, personalWords } from './parties.js?v=2026-10-18';
 
 // Public address used in share messages and on result cards.
 const SITE_URL = 'https://andhbhaktyachamcha.in';
@@ -35,7 +35,9 @@ const displayUrl = () => config.url.replace(/^https?:\/\//, '').replace(/\/$/, '
 const activeQuestions = () => language === 'english' ? englishQuestions : questions;
 const L = () => (language === 'english' ? 1 : 0);
 const t = (hinglish, english) => (language === 'english' ? english : hinglish);
-const chosenParty = () => (preference?.partyId ? findParty(preference.partyId) : null);
+const chosenParty = () => (preference?.partyId ? findParty(preference.partyId, preference) : null);
+const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
+const avatarText = (name) => initials(name) || '🙂';
 
 function languageToggle() {
   return `<div class="language-toggle" role="group" aria-label="Question language"><span>Language</span><button class="${language === 'hinglish' ? 'active' : ''}" data-language="hinglish" aria-pressed="${language === 'hinglish'}">Hinglish</button><button class="${language === 'english' ? 'active' : ''}" data-language="english" aria-pressed="${language === 'english'}">English</button></div>`;
@@ -44,7 +46,7 @@ function languageToggle() {
 function bindLanguageToggle() {
   app.querySelectorAll('[data-language]').forEach((button) => button.addEventListener('click', () => {
     language = button.dataset.language;
-    ({ landing: renderLanding, party: renderParty, leader: renderLeader, quiz: renderQuiz })[view]?.();
+    ({ landing: renderLanding, party: renderParty, leader: renderLeader, custom: renderCustomParty, quiz: renderQuiz })[view]?.();
   }));
 }
 
@@ -126,6 +128,11 @@ function renderParty() {
         <p class="pick-note"><span aria-hidden="true">🔒</span> ${privacyLine()}</p>
       </div>
       <div class="party-grid" role="list">
+        <button class="party-card custom-card ${current === 'custom' ? 'selected' : ''}" role="listitem" data-action="custom-party">
+          <span class="party-symbol" aria-hidden="true">${current === 'custom' ? escapeHtml(preference.custom.symbol) : '➕'}</span>
+          <span class="party-short">${current === 'custom' ? escapeHtml(preference.custom.party) : t('Apni party banao', 'Create your own party')}</span>
+          <span class="party-name">${t('Leader koi bhi: tum, dost, mummy 😄', 'Any leader: you, a friend, your mom 😄')}</span>
+        </button>
         ${parties.map((party) => `
           <button class="party-card ${current === party.id ? 'selected' : ''}" role="listitem" data-party="${party.id}" aria-pressed="${current === party.id}">
             <span class="party-symbol ${party.symbol ? '' : 'text-symbol'}" aria-hidden="true">${party.symbol || party.short.slice(0, 3)}</span>
@@ -141,6 +148,7 @@ function renderParty() {
   `;
   bindLanguageToggle();
   app.querySelector('[data-action="home"]').addEventListener('click', renderLanding);
+  app.querySelector('[data-action="custom-party"]').addEventListener('click', renderCustomParty);
   app.querySelectorAll('[data-party]').forEach((button) => button.addEventListener('click', () => {
     const partyId = button.dataset.party;
     const party = findParty(partyId);
@@ -149,6 +157,52 @@ function renderParty() {
     else { preference.leader = null; beginQuestions(); }
   }));
   const title = app.querySelector('#pick-title'); title.setAttribute('tabindex', '-1'); title.focus({ preventScroll: true });
+}
+
+
+function renderCustomParty() {
+  setPage('custom');
+  const draft = preference?.partyId === 'custom' ? preference.custom : { party: '', leader: '', symbol: customSymbols[0] };
+  let symbol = draft.symbol;
+  app.innerHTML = `
+    <section class="pick-shell page-width" aria-labelledby="pick-title">
+      <div class="quiz-top"><button class="text-button" data-action="back-party">${t('Asli parties dekho', 'See real parties')}</button><button class="text-button" data-action="home">${t('Band karo', 'Exit')}</button></div>
+      ${languageToggle()}
+      <div class="pick-head">
+        <div class="pick-emoji" aria-hidden="true" data-preview-symbol>${escapeHtml(symbol)}</div>
+        <h1 id="pick-title">${t('Apni party banao 🚀', 'Launch your own party 🚀')}</h1>
+        <p class="pick-note"><span aria-hidden="true">🔒</span> ${t('Naam kuch bhi rakho. Ye sirf sawaalon mein dikhega, kahin save ya share nahi hoga.', 'Use any name. It only appears in the questions and is never saved or shared.')}</p>
+      </div>
+      <div class="custom-form">
+        <label for="custom-party">${t('Party ka naam', 'Party name')}</label>
+        <input id="custom-party" type="text" maxlength="${CUSTOM_NAME_MAX}" autocomplete="off" placeholder="${t('Jaise: Chai Pe Charcha Party', 'e.g. Chai Pe Charcha Party')}" value="${escapeHtml(draft.party)}">
+        <label for="custom-leader">${t('Supreme leader kaun?', 'Who is the supreme leader?')}</label>
+        <input id="custom-leader" type="text" maxlength="${CUSTOM_NAME_MAX}" autocomplete="off" placeholder="${t('Tumhara naam, dost ka naam, kuch bhi', 'Your name, a friend, anyone')}" value="${escapeHtml(draft.leader)}">
+        <p class="custom-label" id="symbol-label">${t('Chunaav chinh chuno', 'Pick a party symbol')}</p>
+        <div class="symbol-row" role="radiogroup" aria-labelledby="symbol-label">
+          ${customSymbols.map((emoji) => `<button class="symbol-choice ${emoji === symbol ? 'selected' : ''}" role="radio" aria-checked="${emoji === symbol}" data-symbol="${emoji}">${emoji}</button>`).join('')}
+        </div>
+        <button class="button button-primary button-big" data-action="launch">${t('Party launch karo, quiz shuru 🚀', 'Launch party, start quiz 🚀')}</button>
+      </div>
+    </section>
+  `;
+  bindLanguageToggle();
+  app.querySelector('[data-action="home"]').addEventListener('click', renderLanding);
+  app.querySelector('[data-action="back-party"]').addEventListener('click', renderParty);
+  app.querySelectorAll('[data-symbol]').forEach((button) => button.addEventListener('click', () => {
+    symbol = button.dataset.symbol;
+    app.querySelectorAll('[data-symbol]').forEach((other) => { const on = other === button; other.classList.toggle('selected', on); other.setAttribute('aria-checked', String(on)); });
+    app.querySelector('[data-preview-symbol]').textContent = symbol;
+  }));
+  const launch = () => {
+    const party = cleanName(app.querySelector('#custom-party').value) || t('Meri Party', 'My Party');
+    const leader = cleanName(app.querySelector('#custom-leader').value);
+    preference = { partyId: 'custom', leader: leader || null, custom: { party, leader, symbol } };
+    beginQuestions();
+  };
+  app.querySelector('[data-action="launch"]').addEventListener('click', launch);
+  app.querySelectorAll('.custom-form input').forEach((input) => input.addEventListener('keydown', (event) => { if (event.key === 'Enter') launch(); }));
+  app.querySelector('#custom-party').focus({ preventScroll: true });
 }
 
 function renderLeader() {
@@ -189,7 +243,7 @@ function renderLeader() {
 function teamChip() {
   const party = chosenParty();
   if (!party && preference?.partyId !== 'other') return '';
-  const label = party ? `${party.symbol ? `${party.symbol} ` : ''}${party.short}${preference.leader ? ` · ${preference.leader}` : ''}` : t('🗳️ Tumhari party', '🗳️ Your party');
+  const label = party ? escapeHtml(`${party.symbol ? `${party.symbol} ` : ''}${party.short}${preference.leader ? ` · ${preference.leader}` : ''}`) : t('🗳️ Tumhari party', '🗳️ Your party');
   return `<div class="team-chip"><span>${t('Tumhari team:', 'Your team:')} <strong>${label}</strong></span><button class="text-button" data-action="change-team">${t('Badlo', 'Change')}</button></div>`;
 }
 
@@ -197,9 +251,9 @@ function sceneMarkup(question) {
   const party = chosenParty();
   let sticker = '';
   if (question.about === 'leader' && party && preference.leader) {
-    sticker = `<div class="scene-sticker leader-sticker"><span class="leader-avatar small">${initials(preference.leader)}</span><span>${preference.leader}</span></div>`;
+    sticker = `<div class="scene-sticker leader-sticker"><span class="leader-avatar small">${escapeHtml(avatarText(preference.leader))}</span><span>${escapeHtml(preference.leader)}</span></div>`;
   } else if (question.about && party) {
-    sticker = `<div class="scene-sticker party-sticker"><span class="party-symbol small ${party.symbol ? '' : 'text-symbol'}">${party.symbol || party.short.slice(0, 3)}</span><span>${party.short}</span></div>`;
+    sticker = `<div class="scene-sticker party-sticker"><span class="party-symbol small ${party.symbol ? '' : 'text-symbol'}">${escapeHtml(party.symbol || party.short.slice(0, 3))}</span><span>${escapeHtml(party.short)}</span></div>`;
   }
   return `
     <div class="scene c-${question.scene.bg} ${sticker ? 'has-sticker' : ''}" aria-hidden="true">
@@ -212,7 +266,7 @@ function sceneMarkup(question) {
 function renderQuiz() {
   setPage('quiz');
   const raw = activeQuestions()[currentQuestion];
-  const words = personalWords(preference, L());
+  const words = Object.fromEntries(Object.entries(personalWords(preference, L())).map(([key, value]) => [key, escapeHtml(value)]));
   const question = { ...raw, prompt: fillTokens(raw.prompt, words), options: raw.options.map((option) => ({ ...option, text: fillTokens(option.text, words) })) };
   const selected = answers[currentQuestion];
   const isLast = currentQuestion === questions.length - 1;

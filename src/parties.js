@@ -36,13 +36,24 @@ export const neutralChoices = [
   { id: 'secret', label: ['Batana nahi hai 🤐', 'Rather not say 🤐'], emoji: '🤫' },
 ];
 
-export const findParty = (id) => parties.find((party) => party.id === id) || null;
+// "Apni party banao": the player invents a party and puts any name (their own, a friend's) as leader.
+// Like everything else here, it lives only in memory and never appears on results or share cards.
+export const customSymbols = ['🎉', '🦁', '🥭', '☕', '🛺', '🪁', '🌶️', '🐐'];
+export const CUSTOM_NAME_MAX = 30;
+export const cleanName = (value) => String(value ?? '').replace(/[<>{}]/g, '').replace(/\s+/g, ' ').trim().slice(0, CUSTOM_NAME_MAX);
+
+export function findParty(id, preference = null) {
+  if (id === 'custom' && preference?.custom) {
+    return { id: 'custom', short: preference.custom.party, name: preference.custom.party, symbol: preference.custom.symbol, leaders: [] };
+  }
+  return parties.find((party) => party.id === id) || null;
+}
 export const initials = (name) => name.replace(/[^A-Za-z ]/g, '').split(' ').filter(Boolean).map((word) => word[0]).slice(0, 2).join('').toUpperCase();
 
 // Builds the words that get dropped into questions. Falls back to generic wording when nothing specific was chosen.
 // lang: 0 = Hinglish, 1 = English
 export function personalWords(preference, lang) {
-  const party = preference?.partyId ? findParty(preference.partyId) : null;
+  const party = preference?.partyId ? findParty(preference.partyId, preference) : null;
   const leader = party && preference.leader ? preference.leader : null;
   const generic = lang === 0
     ? { party: 'tumhari favourite party', Party: 'Tumhari favourite party', leader: 'tumhare favourite leader', Leader: 'Tumhare favourite leader' }

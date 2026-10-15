@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { englishQuestions, questions } from '../src/questions.js?v=2026-10-17';
-import { archetypes, chances, countHabits, getResult } from '../src/scoring.js?v=2026-10-17';
-import { fillTokens, findParty, parties, personalWords } from '../src/parties.js?v=2026-10-17';
+import { englishQuestions, questions } from '../src/questions.js?v=2026-10-18';
+import { archetypes, chances, countHabits, getResult } from '../src/scoring.js?v=2026-10-18';
+import { cleanName, fillTokens, findParty, parties, personalWords } from '../src/parties.js?v=2026-10-18';
 
 const habits = Object.keys(archetypes);
 const allAnswerSets = function* () {
@@ -114,6 +114,13 @@ assert.equal(fillTokens('{leader} ki galti', personalWords({ partyId: 'inc', lea
 // A leader from another party is ignored only if the party is missing.
 assert.equal(personalWords({ partyId: 'nota', leader: 'X' }, 0).leader, 'tumhare favourite leader');
 assert.equal(findParty('nope'), null);
+// "Apni party banao": any party name and any leader name flow into the questions.
+const custom = { partyId: 'custom', leader: 'Pratik', custom: { party: 'Chai Pe Charcha Party', leader: 'Pratik', symbol: '☕' } };
+assert.equal(fillTokens('Maan lo, {party} haar gayi. {Leader} ne bola', personalWords(custom, 0)), 'Maan lo, Chai Pe Charcha Party haar gayi. Pratik ne bola');
+assert.equal(personalWords({ ...custom, leader: null }, 0).leader, 'tumhare favourite leader');
+assert.equal(findParty('custom', custom).symbol, '☕');
+assert.equal(cleanName('  <b>Raju</b>   bhai  '), 'bRaju/b bhai');
+assert.equal(cleanName('x'.repeat(50)).length, 30);
 // Results and share copy never mention any listed party or leader.
 const resultCopy = JSON.stringify(archetypes);
 for (const p of parties) {
