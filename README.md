@@ -32,6 +32,7 @@ When you change any file under `src/` or `styles.css`, bump the `?v=` value ever
 - `assets/fonts/`: self-hosted Latin subsets of Yatra One (headlines) and Hind (body), with their OFL licences.
 - `og-image.png`: 1200×630 link-preview image for WhatsApp and other apps.
 - `src/questions.js`: quiz copy, with `{party}` / `{leader}` placeholders and an illustrated scene per question.
+- `src/personal.js`: result lines that use the picked party/leader. Real party names stay off share cards and share text (`SHARE_REAL_PARTIES = false`); invented "Apni party banao" parties do appear there.
 - `src/parties.js`: party and leader list for the optional pre-quiz picker (emoji stand-ins, not official logos). Review before each election season. The pick only changes question wording: it is never scored, stored, sent to analytics or shown on results.
 - `src/scoring.js`: archetypes, share-of-chances scoring and tie-break rules.
 - `src/app.js`: quiz navigation, result view, sharing, and result-card export.

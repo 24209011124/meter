@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { englishQuestions, questions } from '../src/questions.js?v=2026-10-18';
 import { archetypes, chances, countHabits, getResult } from '../src/scoring.js?v=2026-10-18';
 import { cleanName, fillTokens, findParty, parties, personalWords } from '../src/parties.js?v=2026-10-18';
+import { SHARE_REAL_PARTIES, cardKicker, personalResult, shareFlavour } from '../src/personal.js?v=2026-10-18';
 
 const habits = Object.keys(archetypes);
 const allAnswerSets = function* () {
@@ -78,7 +79,7 @@ for (const archetype of Object.values(archetypes)) {
 }
 
 // ---- Cache versioning: every ?v= tag in the site must match ----
-const files = ['index.html', 'about.html', 'privacy.html', 'terms.html', 'contact.html', 'src/app.js', 'src/scoring.js', 'src/parties.js', 'tests/scoring.test.js'];
+const files = ['index.html', 'about.html', 'privacy.html', 'terms.html', 'contact.html', 'src/app.js', 'src/scoring.js', 'src/parties.js', 'src/personal.js', 'tests/scoring.test.js'];
 const versions = new Set(files.flatMap((file) => [...readFileSync(new URL(`../${file}`, import.meta.url), 'utf8').matchAll(/\?v=([\w.-]+)/g)].map((m) => m[1])));
 assert.equal(versions.size, 1, `All ?v= tags must match, found: ${[...versions].join(', ')}`);
 
@@ -131,6 +132,31 @@ const appSource = readFileSync(new URL('../src/app.js', import.meta.url), 'utf8'
 for (const forbidden of ['localStorage', 'sessionStorage', 'gtag(', 'dataLayer', 'history.pushState', 'location.hash', 'document.cookie']) {
   assert.ok(!appSource.includes(forbidden), `app.js must not use ${forbidden}`);
 }
+
+// ---- Personalised results ----
+for (const id of Object.keys(archetypes)) {
+  for (const preference of preferences.concat([custom, { ...custom, leader: null }])) {
+    for (const lang of [0, 1]) {
+      const personal = personalResult(id, preference, lang);
+      if (!personal) continue;
+      for (const text of [personal.line, personal.extra || '']) assert.ok(!/[{}]/.test(text), `Unfilled: ${text}`);
+    }
+  }
+}
+assert.equal(personalResult('andhbhakt', null, 0), null, 'No block without a pick');
+assert.equal(personalResult('andhbhakt', { partyId: 'secret' }, 0), null);
+assert.equal(personalResult('andhbhakt', { partyId: 'nota' }, 0), null);
+assert.ok(personalResult('chamcha', { partyId: 'bjp', leader: 'Amit Shah' }, 0).line.includes('Amit Shah'));
+assert.ok(personalResult('spectator', custom, 0).extra.includes('Pratik'));
+// Real parties never reach the share card or share text (unless the owner flips SHARE_REAL_PARTIES).
+assert.equal(SHARE_REAL_PARTIES, false);
+for (const p of parties) {
+  assert.equal(cardKicker({ partyId: p.id, leader: p.leaders[0] || null }, 0), null);
+  assert.equal(shareFlavour({ partyId: p.id, leader: p.leaders[0] || null }, 0), '');
+}
+assert.equal(cardKicker({ partyId: 'other' }, 0), null);
+assert.equal(cardKicker(custom, 0), '☕ Chai Pe Charcha Party supporter ka verdict:');
+assert.ok(shareFlavour(custom, 0).includes('supreme leader: Pratik'));
 
 assert.throws(() => countHabits([]), /complete set/);
 assert.throws(() => countHabits(Array(7).fill(4)), /complete set/);

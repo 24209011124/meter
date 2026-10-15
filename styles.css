@@ -331,3 +331,11 @@ body.is-landing .site-header, body.is-landing .header-note { color: var(--chalk)
 @media (max-width: 760px) { .custom-form .button-big { width: 100%; } .symbol-choice { width: 50px; height: 50px; } }
 .scene-sticker > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 760px) { .scene-sticker { max-width: 48%; } }
+
+/* ---------- Result: verdict personalised with the player's party/leader ---------- */
+.team-verdict { margin-top: 22px; padding: 22px 24px; display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: center; border: var(--edge); border-radius: var(--r-panel); background: var(--haldi); box-shadow: var(--lift); rotate: -.6deg; }
+.team-badge { display: grid; place-items: center; width: 76px; height: 76px; border: var(--edge); border-radius: 50%; background: var(--chalk); font-size: 2.4rem; line-height: 1; }
+.team-label { font-weight: 700; font-size: .95rem; }
+.team-line { margin-top: 6px; font-family: var(--display); font-size: clamp(1.25rem, 3vw, 1.6rem); line-height: 1.2; }
+.team-extra { margin-top: 10px; font-weight: 600; }
+@media (max-width: 600px) { .team-verdict { grid-template-columns: 1fr; padding: 18px; } .team-badge { width: 60px; height: 60px; font-size: 1.9rem; } }

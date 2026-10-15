@@ -2,6 +2,7 @@
 // (tests/scoring.test.js checks they all match) so returning visitors never mix old and new files.
 import { englishQuestions, questions } from './questions.js?v=2026-10-18';
 import { archetypes, chances, getResult, rankHabits } from './scoring.js?v=2026-10-18';
+import { cardKicker, personalResult, shareFlavour } from './personal.js?v=2026-10-18';
 import { CUSTOM_NAME_MAX, cleanName, customSymbols, fillTokens, findParty, initials, neutralChoices, parties, personalWords } from './parties.js?v=2026-10-18';
 
 // Public address used in share messages and on result cards.
@@ -347,6 +348,7 @@ function renderResult() {
         <blockquote>“${archetype.description}”</blockquote>
         <p>${archetype.verdict}</p>
       </div>
+      ${teamVerdict(archetype)}
       <div class="traits">
         <article class="trait-good"><h2>Superpower</h2><p>${archetype.superpower}</p></article>
         <article class="trait-blind"><h2>Blind spot</h2><p>${archetype.weakness}</p></article>
@@ -400,9 +402,24 @@ function renderResult() {
   });
 }
 
+function teamVerdict(archetype) {
+  const personal = personalResult(archetype.id, preference, L());
+  if (!personal) return '';
+  return `
+      <div class="team-verdict">
+        <div class="team-badge" aria-hidden="true">${escapeHtml(personal.symbol)}</div>
+        <div>
+          <p class="team-label">${escapeHtml(personal.team)}${personal.leader ? ` · ${escapeHtml(personal.leader)}` : ''} ${t('wala verdict', 'edition')}</p>
+          <p class="team-line">${escapeHtml(personal.line)}</p>
+          ${personal.extra ? `<p class="team-extra">${escapeHtml(personal.extra)}</p>` : ''}
+        </div>
+      </div>`;
+}
+
 function shareText() {
   const { archetype } = result;
-  return `Mera result: ${archetype.emoji} *${archetype.title}*\n"${archetype.description}" 😂\n\nTu kya niklega? Andhbhakt, Chamcha ya kuch aur?\n${questions.length} sawaal, 2 minute: ${config.url}`;
+  const flavour = shareFlavour(preference, L());
+  return `${flavour ? `${flavour}\n` : ''}Mera result: ${archetype.emoji} *${archetype.title}*\n"${archetype.description}" 😂\n\nTu kya niklega? Andhbhakt, Chamcha ya kuch aur?\n${questions.length} sawaal, 2 minute: ${config.url}`;
 }
 function challengeText() { return `Bhai, ek political reality check de. Main toh ${result.archetype.emoji} ${shortTitle(result.archetype)} nikla. Tu kya niklega? 😏\nResult screenshot karke bhejna, cheating nahi.\n${config.url}`; }
 
@@ -452,7 +469,7 @@ function stickerRect(ctx, x, y, w, h, r, fill, shadow = 14) {
 // Draws lines centred on x, first baseline at y. Returns the last baseline.
 function centredLines(ctx, lines, x, y, lineHeight) { lines.forEach((line, i) => ctx.fillText(line, x, y + i * lineHeight)); return y + (lines.length - 1) * lineHeight; }
 
-export function drawCard(canvas, archetype, format, url) {
+export function drawCard(canvas, archetype, format, url, kicker = null) {
   const story = format === 'story';
   const W = 1080; const H = story ? 1920 : 1350; const pad = 80; const cx = W / 2;
   canvas.width = W; canvas.height = H;
@@ -489,7 +506,9 @@ export function drawCard(canvas, archetype, format, url) {
   // Kicker
   let y = L.emojiY + L.r + L.gapKicker;
   ctx.font = `600 ${L.kicker}px Hind, sans-serif`;
-  ctx.fillText('Mera political verdict:', cx, y);
+  let kickerSize = L.kicker; const kickerText = kicker || 'Mera political verdict:';
+  for (;;) { ctx.font = `600 ${kickerSize}px Hind, sans-serif`; if (ctx.measureText(kickerText).width <= W - pad * 2 || kickerSize <= 26) break; kickerSize -= 2; }
+  ctx.fillText(kickerText, cx, y);
 
   // Title: biggest size that fits in two lines
   let size = L.title; let lines;
@@ -527,7 +546,7 @@ export function drawCard(canvas, archetype, format, url) {
 async function renderCard(format) {
   try { await Promise.all([document.fonts.load('60px "Yatra One"'), document.fonts.load('600 40px Hind'), document.fonts.load('700 40px Hind')]); } catch { /* fall back to system fonts */ }
   const canvas = document.createElement('canvas');
-  drawCard(canvas, result.archetype, format, displayUrl());
+  drawCard(canvas, result.archetype, format, displayUrl(), cardKicker(preference, L()));
   return canvas;
 }
 const cardName = (format) => `andhbhakt-ya-chamcha-${result.archetype.id}-${format}.png`;
