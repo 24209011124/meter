@@ -1,11 +1,12 @@
 // When you change any file under src/, bump the ?v= value here, in scoring.js and in index.html
 // (tests/scoring.test.js checks they all match) so returning visitors never mix old and new files.
-import { englishQuestions, questions } from './questions.js?v=2026-10-16';
-import { archetypes, chances, getResult, rankHabits } from './scoring.js?v=2026-10-16';
-import { fillTokens, findParty, initials, neutralChoices, parties, personalWords } from './parties.js?v=2026-10-16';
+import { englishQuestions, questions } from './questions.js?v=2026-10-17';
+import { archetypes, chances, getResult, rankHabits } from './scoring.js?v=2026-10-17';
+import { fillTokens, findParty, initials, neutralChoices, parties, personalWords } from './parties.js?v=2026-10-17';
 
 // Public address used in share messages and on result cards.
 const SITE_URL = 'https://andhbhaktyachamcha.in';
+const INSTAGRAM_URL = 'https://www.instagram.com/andhbhakt_ya_chamcha';
 
 const config = {
   brand: 'Andhbhakt Ya Chamcha?',
@@ -305,6 +306,10 @@ function renderResult() {
           <a class="button ${canShareFiles() ? 'button-plain' : 'button-whatsapp'}" href="${waLink}" target="_blank" rel="noopener">WhatsApp pe bhejo</a>
           <button class="button button-primary" data-action="challenge">Dost ko challenge karo</button>
           ${canShareFiles() ? '' : `<button class="button button-plain" data-action="share">${navigator.share ? 'Kahin aur share karo' : 'Result copy karo'}</button>`}
+        </div>
+        <div class="instagram-cta">
+          <p>Daily political satire ke liye Instagram pe follow karo 👀</p>
+          <a class="button button-instagram" href="${INSTAGRAM_URL}" target="_blank" rel="noopener noreferrer">Instagram pe follow karo</a>
         </div>
         <div class="card-row">
           <span>Result card download karo:</span>

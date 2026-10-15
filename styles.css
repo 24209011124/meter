@@ -163,6 +163,9 @@ body.is-landing .site-header, body.is-landing .header-note { color: var(--chalk)
 .share-row .button { box-shadow: 4px 4px 0 var(--haldi); }
 .share-row .button:hover:not(:disabled) { box-shadow: 5px 5px 0 var(--haldi); }
 .share-row .button:active:not(:disabled) { box-shadow: 1px 1px 0 var(--haldi); }
+.instagram-cta { margin-top: 26px; padding-top: 22px; border-top: 2px dashed rgba(255, 247, 251, .35); display: flex; flex-wrap: wrap; align-items: center; gap: 14px 22px; }
+.instagram-cta p { font-weight: 600; }
+.button-instagram { background: linear-gradient(120deg, #f9ce34, #ee2a7b 52%, #6228d7); color: #fff; }
 .card-row { margin-top: 22px; padding-top: 22px; border-top: 2px dashed rgba(255, 247, 251, .35); display: flex; flex-wrap: wrap; align-items: center; gap: 12px 22px; }
 .card-row span { font-weight: 600; }
 .card-row .text-button { color: var(--haldi); }

@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { englishQuestions, questions } from '../src/questions.js?v=2026-10-16';
-import { archetypes, chances, countHabits, getResult } from '../src/scoring.js?v=2026-10-16';
-import { fillTokens, findParty, parties, personalWords } from '../src/parties.js?v=2026-10-16';
+import { englishQuestions, questions } from '../src/questions.js?v=2026-10-17';
+import { archetypes, chances, countHabits, getResult } from '../src/scoring.js?v=2026-10-17';
+import { fillTokens, findParty, parties, personalWords } from '../src/parties.js?v=2026-10-17';
 
 const habits = Object.keys(archetypes);
 const allAnswerSets = function* () {
