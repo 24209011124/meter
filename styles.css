@@ -383,3 +383,39 @@ body.is-landing .site-header, body.is-landing .header-note { color: var(--chalk)
 .result-actions .button-primary:active:not(:disabled) { box-shadow: 1px 1px 0 var(--chalk); }
 @media (hover: hover) { .result-actions .button-primary:hover:not(:disabled) { box-shadow: 6px 6px 0 var(--chalk); } }
 .result-actions .button-primary:focus-visible { outline-color: var(--chalk); }
+
+/* ---------- Landing: live "Ab tak ka scene" chart ---------- */
+.scene-stats { padding-top: 64px; }
+.stats-panel { padding: 28px; border: var(--edge); border-radius: var(--r-panel); background: var(--jamun); color: var(--chalk); box-shadow: 8px 8px 0 var(--haldi); }
+.stats-head h2 { font-size: clamp(2rem, 5vw, 3rem); }
+.stats-caption { margin-top: 8px; font-size: 1.1rem; }
+.stats-body { margin-top: 22px; display: grid; grid-template-columns: minmax(200px, 300px) 1fr; gap: 28px; align-items: center; }
+.donut { width: 100%; height: auto; overflow: visible; }
+.donut path { stroke: var(--jamun); stroke-width: 4; stroke-linejoin: round; transition: transform .15s ease; transform-origin: 120px 120px; }
+@media (hover: hover) { .donut-slice:hover path { transform: scale(1.04); } }
+.donut-emoji { font-size: 22px; pointer-events: none; }
+.donut-total { fill: var(--chalk); font-family: var(--display); font-size: 34px; }
+.donut-sub { fill: var(--chalk); font-family: var(--body); font-size: 15px; font-weight: 600; opacity: .85; }
+.stats-legend { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.stats-legend li { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; font-size: 1.05rem; }
+.legend-swatch { display: grid; place-items: center; width: 38px; height: 38px; border: 2px solid var(--chalk); border-radius: 50%; font-size: 1.2rem; line-height: 1; }
+.stats-legend strong { font-family: var(--display); font-weight: 400; font-size: 1.35rem; }
+.stats-foot { margin-top: 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+.stats-foot p { font-size: .9rem; opacity: .85; }
+.stats-panel .button-primary { box-shadow: 4px 4px 0 var(--chalk); }
+.stats-locked { padding: 22px 24px; display: grid; grid-template-columns: auto 1fr auto; gap: 18px; align-items: center; border: 2px dashed var(--jamun); border-radius: var(--r-panel); background: var(--lilac); }
+.stats-lock { font-size: 2.4rem; }
+.stats-locked h2 { font-size: clamp(1.4rem, 3.5vw, 1.9rem); }
+.stats-locked p { margin-top: 4px; }
+/* Result: "x% log ... nikle" */
+.result-stat { max-width: 440px; margin: 16px auto 0; padding: 10px 14px; border: 2px solid var(--jamun); border-radius: 999px; background: var(--chalk); text-align: center; font-weight: 700; font-size: .95rem; }
+@media (max-width: 700px) {
+  .stats-panel { padding: 20px 18px; }
+  .stats-body { grid-template-columns: 1fr; justify-items: center; }
+  .donut { max-width: 260px; }
+  .stats-legend { width: 100%; }
+  .stats-locked { grid-template-columns: 1fr; text-align: center; justify-items: center; }
+  .stats-foot .button { width: 100%; }
+}
+.stats-legend { max-width: 380px; }
+.donut-centre { font-size: 64px; }

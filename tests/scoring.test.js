@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { englishQuestions, questions } from '../src/questions.js?v=2026-10-19';
-import { archetypes, chances, countHabits, getResult } from '../src/scoring.js?v=2026-10-19';
-import { cleanName, fillTokens, findParty, parties, personalWords } from '../src/parties.js?v=2026-10-19';
-import { SHARE_REAL_PARTIES, cardKicker, personalResult, shareFlavour } from '../src/personal.js?v=2026-10-19';
+import { englishQuestions, questions } from '../src/questions.js?v=2026-10-20';
+import { archetypes, chances, countHabits, getResult } from '../src/scoring.js?v=2026-10-20';
+import { cleanName, fillTokens, findParty, parties, personalWords } from '../src/parties.js?v=2026-10-20';
+import { SHARE_REAL_PARTIES, cardKicker, personalResult, shareFlavour } from '../src/personal.js?v=2026-10-20';
+import { SLICE_ORDER, percentages } from '../src/stats.js?v=2026-10-20';
 
 const habits = Object.keys(archetypes);
 const allAnswerSets = function* () {
@@ -79,7 +80,7 @@ for (const archetype of Object.values(archetypes)) {
 }
 
 // ---- Cache versioning: every ?v= tag in the site must match ----
-const files = ['index.html', 'about.html', 'privacy.html', 'terms.html', 'contact.html', 'src/app.js', 'src/scoring.js', 'src/parties.js', 'src/personal.js', 'tests/scoring.test.js'];
+const files = ['index.html', 'about.html', 'privacy.html', 'terms.html', 'contact.html', 'src/app.js', 'src/scoring.js', 'src/parties.js', 'src/personal.js', 'src/stats.js', 'tests/scoring.test.js'];
 const versions = new Set(files.flatMap((file) => [...readFileSync(new URL(`../${file}`, import.meta.url), 'utf8').matchAll(/\?v=([\w.-]+)/g)].map((m) => m[1])));
 assert.equal(versions.size, 1, `All ?v= tags must match, found: ${[...versions].join(', ')}`);
 
@@ -166,6 +167,16 @@ for (const p of parties) {
 assert.equal(cardKicker({ partyId: 'other' }, 0), null);
 assert.equal(cardKicker(custom, 0), '☕ Chai Pe Charcha Party supporter ka verdict:');
 assert.ok(shareFlavour(custom, 0).includes('supreme leader: Pratik'));
+
+// ---- Public result-type counter ----
+assert.deepEqual([...SLICE_ORDER].sort(), [...habits].sort(), 'Chart covers every result type');
+assert.deepEqual(percentages({ andhbhakt: 1, chamcha: 1, independent: 2, spectator: 0, factChecker: 0, manifesto: 0 }, 4).independent, 50);
+assert.equal(percentages(Object.fromEntries(habits.map((h) => [h, 0])), 0).chamcha, 0);
+const statsSource = readFileSync(new URL('../src/stats.js', import.meta.url), 'utf8');
+for (const word of ['preference', 'party', 'leader', 'answers', 'custom', 'localStorage']) {
+  assert.ok(!new RegExp(`\\b${word}\\b`).test(statsSource.replace(/\/\/.*$/gm, '')), `stats.js must not touch ${word}`);
+}
+assert.ok(/recordResult\(archetype\.id\)/.test(appSource), 'Only the result type is counted');
 
 assert.throws(() => countHabits([]), /complete set/);
 assert.throws(() => countHabits(Array(7).fill(4)), /complete set/);

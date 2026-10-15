@@ -1,9 +1,10 @@
 // When you change any file under src/, bump the ?v= value here, in scoring.js and in index.html
 // (tests/scoring.test.js checks they all match) so returning visitors never mix old and new files.
-import { englishQuestions, questions } from './questions.js?v=2026-10-19';
-import { archetypes, chances, getResult, rankHabits } from './scoring.js?v=2026-10-19';
-import { cardKicker, personalResult, shareFlavour } from './personal.js?v=2026-10-19';
-import { CUSTOM_NAME_MAX, cleanName, customSymbols, fillTokens, findParty, initials, neutralChoices, parties, personalWords } from './parties.js?v=2026-10-19';
+import { englishQuestions, questions } from './questions.js?v=2026-10-20';
+import { archetypes, chances, getResult, rankHabits } from './scoring.js?v=2026-10-20';
+import { cardKicker, personalResult, shareFlavour } from './personal.js?v=2026-10-20';
+import { MIN_TOTAL_FOR_CHART, SLICE_ORDER, fetchStats, percentages, recordResult } from './stats.js?v=2026-10-20';
+import { CUSTOM_NAME_MAX, cleanName, customSymbols, fillTokens, findParty, initials, neutralChoices, parties, personalWords } from './parties.js?v=2026-10-20';
 
 // Public address used in share messages and on result cards.
 const SITE_URL = 'https://andhbhaktyachamcha.in';
@@ -32,6 +33,8 @@ let answers = [];
 let currentQuestion = 0;
 let result = null;
 let advancing = false;
+// The whole site is Hinglish. English copy is kept in the code (t() second argument, englishQuestions)
+// so an English mode can be switched back on later by setting this to 'english'.
 let language = 'hinglish';
 let view = 'landing';
 // Party/leader picked before the quiz. Kept only in this variable: never scored, stored, sent to analytics or shown on results.
@@ -77,7 +80,7 @@ function renderLanding() {
             <p class="hero-lede">${t('Har group chat mein ek Andhbhakt hota hai, ek Chamcha. Kahin woh tum toh nahi? 👀', 'Every group chat has one Andhbhakt and one Chamcha. Is it you? 👀')}</p>
             <button class="button button-primary button-big" data-action="start">${t('Pata karo 👀', 'Find out 👀')}</button>
             <p class="oath"><span aria-hidden="true">🤚</span> <em>"Jo kahunga sach kahunga, sach ke siwa kuch nahi kahunga."</em><small>${t('Haath dil pe, phone haath mein. 📱😂', 'Hand on heart, phone in hand. 📱😂')}</small></p>
-            <p class="hero-note">${t('2 minute. Koi login nahi. Kuch save nahi hota.', '2 minutes. No login. Nothing is saved.')} <button class="lang-link" data-language="${language === 'english' ? 'hinglish' : 'english'}">${language === 'english' ? 'Hinglish mein khelo' : 'Play in English'}</button></p>
+            <p class="hero-note">${t('2 minute. Koi login nahi. Kuch save nahi hota.', '2 minutes. No login. Nothing is saved.')}</p>
           </div>
           <div class="ticket-stack" aria-hidden="true">
             ${fan.map((a) => `<div class="ticket c-${a.id}"><div class="ticket-emoji">${a.emoji}</div><h3>${shortTitle(a)}</h3><p>${a.subtitle}</p></div>`).join('')}
@@ -85,6 +88,8 @@ function renderLanding() {
           </div>
         </div>
       </section>
+
+      <section class="scene-stats page-width" aria-labelledby="stats-title" data-stats hidden></section>
 
       <section class="steps page-width" aria-labelledby="steps-title">
         <h2 id="steps-title">${t('Khelna simple hai', 'How it works')}</h2>
@@ -115,6 +120,7 @@ function renderLanding() {
   `;
   bindLanguageToggle();
   app.querySelectorAll('[data-action="start"]').forEach((button) => button.addEventListener('click', startQuiz));
+  loadLandingStats();
 }
 
 
@@ -129,7 +135,6 @@ function renderParty() {
   app.innerHTML = `
     <section class="pick-shell page-width" aria-labelledby="pick-title">
       <div class="quiz-top"><span>${t('Shuru karne se pehle', 'Before we start')}</span><button class="text-button" data-action="home">${t('Band karo', 'Exit')}</button></div>
-      ${languageToggle()}
       <div class="pick-head">
         <div class="pick-emoji" aria-hidden="true">🗳️</div>
         <h1 id="pick-title">${t('Aaj chunaav ho, toh vote kisko doge?', 'If the election were today, who gets your vote?')}</h1>
@@ -176,7 +181,6 @@ function renderCustomParty() {
   app.innerHTML = `
     <section class="pick-shell page-width" aria-labelledby="pick-title">
       <div class="quiz-top"><button class="text-button" data-action="back-party">${t('Asli parties dekho', 'See real parties')}</button><button class="text-button" data-action="home">${t('Band karo', 'Exit')}</button></div>
-      ${languageToggle()}
       <div class="pick-head">
         <div class="pick-emoji" aria-hidden="true" data-preview-symbol>${escapeHtml(symbol)}</div>
         <h1 id="pick-title">${t('Apni party banao 🚀', 'Launch your own party 🚀')}</h1>
@@ -222,7 +226,6 @@ function renderLeader() {
   app.innerHTML = `
     <section class="pick-shell page-width" aria-labelledby="pick-title">
       <div class="quiz-top"><button class="text-button" data-action="back-party">${t('Party badlo', 'Change party')}</button><button class="text-button" data-action="home">${t('Band karo', 'Exit')}</button></div>
-      ${languageToggle()}
       <div class="pick-head">
         <div class="pick-emoji ${party.symbol ? '' : 'party-badge-big'}" aria-hidden="true">${party.symbol || party.short.slice(0, 3)}</div>
         <h1 id="pick-title">${t(`${party.short} mein tumhara favourite leader kaun?`, `Your favourite ${party.short} leader?`)}</h1>
@@ -334,6 +337,80 @@ function goForward() {
   focusQuestion();
 }
 
+
+// ---------- Live "Ab tak ka scene" chart (anonymous result-type counts, see src/stats.js) ----------
+
+const sceneCaption = {
+  andhbhakt: ['Andhbhakt majority mein hain. 🙈 Aankhein kholo, quiz khelo.', 'Andhbhakts are winning. 🙈 Open your eyes and play.'],
+  chamcha: ['Chamche aage chal rahe hain. 🥄 Kahin tum bhi toh nahi?', 'The Chamchas are ahead. 🥄 Are you one too?'],
+  independent: ['Sab Independent Thinker nikal rahe hain. 🧠 Sach mein? 😏', 'Everyone is an Independent Thinker. 🧠 Really? 😏'],
+  spectator: ['Popcorn party sabse badi hai. 🍿 Debate kaun karega?', 'Team Popcorn is the biggest. 🍿 Who will debate?'],
+  factChecker: ['Fact-check wale jeet rahe hain. 🔎 Source: yahi chart.', 'Fact-checkers are winning. 🔎 Source: this chart.'],
+  manifesto: ['Auditor log aage hain. 📋 Neta log, dhyaan do.', 'The auditors lead. 📋 Netas, take note.'],
+};
+
+function donutSvg(counts, total, top) {
+  const size = 240; const cx = size / 2; const cy = size / 2; const outer = 112; const inner = 62;
+  let angle = -Math.PI / 2;
+  const point = (r, a) => `${(cx + r * Math.cos(a)).toFixed(2)} ${(cy + r * Math.sin(a)).toFixed(2)}`;
+  const slices = SLICE_ORDER.filter((id) => counts[id] > 0).map((id) => {
+    const share = counts[id] / total;
+    const start = angle; const end = angle + share * Math.PI * 2; angle = end;
+    const large = end - start > Math.PI ? 1 : 0;
+    const mid = (start + end) / 2;
+    const path = share >= 0.999
+      ? `M ${point(outer, -Math.PI / 2)} A ${outer} ${outer} 0 1 1 ${point(outer, Math.PI * 1.5 - 0.0001)} L ${point(inner, Math.PI * 1.5 - 0.0001)} A ${inner} ${inner} 0 1 0 ${point(inner, -Math.PI / 2)} Z`
+      : `M ${point(outer, start)} A ${outer} ${outer} 0 ${large} 1 ${point(outer, end)} L ${point(inner, end)} A ${inner} ${inner} 0 ${large} 0 ${point(inner, start)} Z`;
+    const label = share >= 0.07 ? `<text x="${point((outer + inner) / 2, mid).split(' ')[0]}" y="${point((outer + inner) / 2, mid).split(' ')[1]}" class="donut-emoji" text-anchor="middle" dominant-baseline="central">${archetypes[id].emoji}</text>` : '';
+    return `<g class="donut-slice"><path d="${path}" fill="var(--c-${id})"><title>${shortTitle(archetypes[id])}: ${Math.round(share * 100)}%</title></path>${label}</g>`;
+  }).join('');
+  return `<svg class="donut" viewBox="0 0 ${size} ${size}" role="img" aria-label="${t('Ab tak ke results ka chart', 'Chart of results so far')}">${slices}
+    <text x="${cx}" y="${cy}" class="donut-centre" text-anchor="middle" dominant-baseline="central">${archetypes[top].emoji}</text></svg>`;
+}
+
+async function loadLandingStats() {
+  const box = app.querySelector('[data-stats]');
+  if (!box) return;
+  let stats;
+  try { stats = await fetchStats(); } catch { return; } // service down: keep the section hidden
+  if (!box.isConnected) return;
+  const { counts, total } = stats;
+  if (total < MIN_TOTAL_FOR_CHART) return; // stays hidden until there is enough real data
+  {
+    const pct = percentages(counts, total);
+    const top = SLICE_ORDER.reduce((best, id) => (counts[id] > counts[best] ? id : best), SLICE_ORDER[0]);
+    box.innerHTML = `
+      <div class="stats-panel">
+        <div class="stats-head">
+          <h2 id="stats-title">${t('Ab tak ka scene 📊', 'The scene so far 📊')}</h2>
+          <p class="stats-caption">${sceneCaption[top][L()]}</p>
+        </div>
+        <div class="stats-body">
+          ${donutSvg(counts, total, top)}
+          <ul class="stats-legend">
+            ${SLICE_ORDER.map((id) => `<li><span class="legend-swatch c-${id}" aria-hidden="true">${archetypes[id].emoji}</span><span class="legend-name">${shortTitle(archetypes[id])}</span><strong>${pct[id]}%</strong></li>`).join('')}
+          </ul>
+        </div>
+        <div class="stats-foot">
+          <button class="button button-primary" data-action="start">${t('Main kahan hoon? 👀', 'Where do I fit? 👀')}</button>
+          <p>${t('Asli results, live. Scientific nahi, bas mazaak.', 'Real results, live. Not science, just fun.')}</p>
+        </div>
+      </div>`;
+  }
+  box.querySelectorAll('[data-action="start"]').forEach((button) => button.addEventListener('click', startQuiz));
+  box.hidden = false;
+}
+
+async function showResultStat(archetype) {
+  const line = app.querySelector('[data-result-stat]');
+  let stats;
+  try { stats = await recordResult(archetype.id); } catch { return; }
+  if (!line?.isConnected || stats.total < MIN_TOTAL_FOR_CHART) return;
+  const pct = percentages(stats.counts, stats.total)[archetype.id];
+  line.textContent = t(`Ab tak har 100 mein se ${pct} ${shortTitle(archetype)} nikle. Tum akele nahi ho. 😌`, `${pct}% of players so far got ${shortTitle(archetype)}. You are not alone. 😌`);
+  line.hidden = false;
+}
+
 function renderResult() {
   setPage('result');
   const { archetype, runnerUp, counts, evidence } = result;
@@ -353,6 +430,7 @@ function renderResult() {
           <p class="rc-roast">“${archetype.description}”</p>
           <p class="rc-url">andhbhaktyachamcha.in</p>
         </article>
+        <p class="result-stat" data-result-stat hidden></p>
         <div class="result-actions">
           ${canShareImage
             ? `<button class="button button-primary button-big" data-action="share-card">${t('Story pe lagao 📲', 'Post to Story 📲')}</button>`
@@ -373,7 +451,7 @@ function renderResult() {
         ${runnerUp ? `<p class="rd-runner">${t('Thoda sa', 'A bit of')} ${runnerUp.emoji} ${shortTitle(runnerUp)} ${t('bhi.', 'too.')}</p>` : ''}
         <div class="traits">
           <article class="trait-good"><h2>Superpower</h2><p>${archetype.superpower}</p></article>
-          <article class="trait-blind"><h2>Blind spot</h2><p>${archetype.weakness}</p></article>
+          <article class="trait-blind"><h2>${t('Kamzori', 'Blind spot')}</h2><p>${archetype.weakness}</p></article>
         </div>
         <div class="habit-breakdown">
           <h2>${t('Kaunsi aadat kitni baar', 'Your answers by habit')}</h2>
@@ -384,12 +462,13 @@ function renderResult() {
       <div class="result-links">
         <button class="text-button" data-action="restart">${t('Dobara khelo', 'Play again')}</button>
         <a class="text-button" href="${INSTAGRAM_URL}" target="_blank" rel="noopener noreferrer" data-track="instagram">${t('Aise aur memes: Instagram', 'More memes on Instagram')}</a>
-        <span class="result-downloads">${t('Image:', 'Image:')} <button class="text-button" data-action="download-story">Story</button> <button class="text-button" data-action="download-feed">Post</button></span>
+        <span class="result-downloads">${t('Image save karo:', 'Save image:')} <button class="text-button" data-action="download-story">${t('Story size', 'Story size')}</button> <button class="text-button" data-action="download-feed">${t('Post size', 'Post size')}</button></span>
       </div>
       <p class="result-note">${t('Sirf mazaak ke liye. Tumhare jawaab kahin save nahi hote.', 'Just for fun. Your answers are never saved.')}</p>
     </section>
   `;
   app.querySelector('h1').focus({ preventScroll: true });
+  showResultStat(archetype);
   app.querySelector('[data-action="share-card"]')?.addEventListener('click', shareCard);
   app.querySelector('[data-action="challenge"]').addEventListener('click', shareChallenge);
   app.querySelectorAll('[data-action="download-story"]').forEach((button) => button.addEventListener('click', () => downloadCard('story')));
