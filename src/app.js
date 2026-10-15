@@ -1,10 +1,10 @@
 // When you change any file under src/, bump the ?v= value here, in scoring.js and in index.html
 // (tests/scoring.test.js checks they all match) so returning visitors never mix old and new files.
-import { englishQuestions, questions } from './questions.js?v=2026-10-20';
-import { archetypes, chances, getResult, rankHabits } from './scoring.js?v=2026-10-20';
-import { cardKicker, personalResult, shareFlavour } from './personal.js?v=2026-10-20';
-import { MIN_TOTAL_FOR_CHART, SLICE_ORDER, fetchStats, percentages, recordResult } from './stats.js?v=2026-10-20';
-import { CUSTOM_NAME_MAX, cleanName, customSymbols, fillTokens, findParty, initials, neutralChoices, parties, personalWords } from './parties.js?v=2026-10-20';
+import { englishQuestions, questions } from './questions.js?v=2026-10-21';
+import { archetypes, chances, getResult, rankHabits } from './scoring.js?v=2026-10-21';
+import { cardKicker, personalResult, shareFlavour } from './personal.js?v=2026-10-21';
+import { MIN_TOTAL_FOR_CHART, SLICE_ORDER, fetchStats, percentages, recordResult } from './stats.js?v=2026-10-21';
+import { CUSTOM_NAME_MAX, cleanName, customSymbols, fillTokens, findParty, initials, neutralChoices, parties, personalWords } from './parties.js?v=2026-10-21';
 
 // Public address used in share messages and on result cards.
 const SITE_URL = 'https://andhbhaktyachamcha.in';
