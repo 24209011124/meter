@@ -28,7 +28,7 @@ jobs:
       - name: Assemble public site
         run: |
           mkdir _site
-          cp index.html styles.css favicon.svg og-image.png _site/
+          cp index.html styles.css favicon.svg og-image.png robots.txt sitemap.xml CNAME _site/
           cp about.html privacy.html terms.html contact.html _site/
           cp -R assets src _site/
 

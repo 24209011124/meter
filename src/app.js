@@ -1,13 +1,13 @@
-import { englishQuestions, questions } from './questions.js';
-import { archetypes, getResult, rankHabits } from './scoring.js';
+// When you change any file under src/, bump the ?v= value here, in scoring.js and in index.html
+// (tests/scoring.test.js checks they all match) so returning visitors never mix old and new files.
+import { englishQuestions, questions } from './questions.js?v=2026-10-15';
+import { archetypes, chances, getResult, rankHabits } from './scoring.js?v=2026-10-15';
 
-// Set SITE_URL to the production address (e.g. 'https://bhaktyachamcha.in') before launch.
-// Until then the current page origin is used.
-const SITE_URL = 'https://24209011124.github.io/meter';
+// Public address used in share messages and on result cards.
+const SITE_URL = 'https://andhbhaktyachamcha.in';
 
 const config = {
   brand: 'Andhbhakt Ya Chamcha?',
-  shortBrand: 'AB ya C',
   url: SITE_URL || window.location.origin,
 };
 
@@ -57,7 +57,7 @@ function renderLanding() {
             <p class="hero-lede">7 sawaal. Ek political reality check. Phir pata chalega group chat mein asli Bhakt, Chamcha aur Fact-Checker kaun hai. 👀</p>
             ${languageToggle()}
             <button class="button button-primary button-big" data-action="start">Chalo, Reality Check Lo 🔥</button>
-            <p class="hero-note">2 min Quiz. Signup nahi.</p>
+            <p class="hero-note">2 minute. Koi signup nahi. Tumhare jawaab kahin save nahi hote.</p>
           </div>
           <div class="ticket-stack" aria-hidden="true">
             ${fan.map((a) => `<div class="ticket c-${a.id}"><div class="ticket-emoji">${a.emoji}</div><h3>${shortTitle(a)}</h3><p>${a.subtitle}</p></div>`).join('')}
@@ -156,9 +156,9 @@ function goForward() {
 
 function renderResult() {
   setPage('result');
-  const { archetype, runnerUp, counts, last } = result;
-  const breakdown = rankHabits(counts, last).filter((habit) => counts[habit] > 0).map((habit) => `
-    <li><span>${archetypes[habit].emoji} ${shortTitle(archetypes[habit])}</span><span class="habit-bar" aria-hidden="true"><i class="c-${habit}" style="width:${counts[habit] * (100 / questions.length)}%"></i></span><span>${counts[habit]} / ${questions.length}</span></li>`).join('');
+  const { archetype, runnerUp, counts, evidence } = result;
+  const breakdown = rankHabits(counts, evidence).filter((habit) => counts[habit] > 0).map((habit) => `
+    <li><span>${archetypes[habit].emoji} ${shortTitle(archetypes[habit])}</span><span class="habit-bar" aria-hidden="true"><i class="c-${habit}" style="width:${Math.round((counts[habit] / chances[habit]) * 100)}%"></i></span><span>${counts[habit]} / ${chances[habit]} mauke</span></li>`).join('');
   const waLink = `https://wa.me/?text=${encodeURIComponent(shareText())}`;
   app.innerHTML = `
     <section class="result-band c-${archetype.id}">
@@ -183,11 +183,12 @@ function renderResult() {
 
       <div class="share-box">
         <h2>Ab group mein bhejo</h2>
-        <p>Dekhte hain tumhare dost kya nikalte hain.</p>
+        <p>Result card Status pe lagao, aur dekho kaun appeal file karta hai. 😂</p>
         <div class="share-row">
-          <a class="button button-whatsapp" href="${waLink}" target="_blank" rel="noopener">WhatsApp pe bhejo</a>
+          ${canShareFiles() ? '<button class="button button-whatsapp" data-action="share-card">Status pe lagao</button>' : ''}
+          <a class="button ${canShareFiles() ? 'button-plain' : 'button-whatsapp'}" href="${waLink}" target="_blank" rel="noopener">WhatsApp pe bhejo</a>
           <button class="button button-primary" data-action="challenge">Dost ko challenge karo</button>
-          <button class="button button-plain" data-action="share">${navigator.share ? 'Kahin aur share karo' : 'Result copy karo'}</button>
+          ${canShareFiles() ? '' : `<button class="button button-plain" data-action="share">${navigator.share ? 'Kahin aur share karo' : 'Result copy karo'}</button>`}
         </div>
         <div class="card-row">
           <span>Result card download karo:</span>
@@ -197,8 +198,8 @@ function renderResult() {
       </div>
 
       <div class="habit-breakdown">
-        <h2>Tumhare 7 jawaab</h2>
-        <p>Har jawaab ek habit se juda tha. Ye raha poora hisaab.</p>
+        <h2>Tumhare ${questions.length} jawaab</h2>
+        <p>Har habit ko kuch mauke mile. Tumne kitni baar kaunsi chuni, ye raha poora hisaab.</p>
         <ul>${breakdown}</ul>
       </div>
 
@@ -206,12 +207,13 @@ function renderResult() {
         <button class="text-button" data-action="restart">Quiz dobara do</button>
         <button class="text-button" data-action="method" aria-expanded="false">Result kaise decide hota hai?</button>
       </div>
-      <div class="method-note" hidden><strong>Transparent hai, scientific nahi.</strong> Har answer ek reasoning habit se map hota hai. Tumhare 7 answers ka overall pattern primary result aur runner-up decide karta hai. Tie hone par tumhara sabse recent matching answer tie-break karta hai. Koi party, leader ya personal data involved nahi.</div>
+      <div class="method-note" hidden><strong>Transparent hai, scientific nahi.</strong> Har jawaab ek habit dikhata hai. Har habit quiz mein 4 ya 5 baar option ke roop mein aati hai, isliye hum dekhte hain ki tumne har habit ke kitne mauke liye. Jo habit tumne sabse zyada (share mein) chuni, wahi result. Barabar hone par, jis habit ka sabse clear "signature" jawab tumne chuna, wo jeet-ti hai. Koi party, leader ya personal data involved nahi.</div>
       <p class="result-note">Ye result entertainment ke liye hai. Ye tumhari political affiliation ke baare mein koi claim nahi karta.</p>
     </section>
   `;
   app.querySelector('h1').focus({ preventScroll: true });
-  app.querySelector('[data-action="share"]').addEventListener('click', shareResult);
+  app.querySelector('[data-action="share"]')?.addEventListener('click', shareResult);
+  app.querySelector('[data-action="share-card"]')?.addEventListener('click', shareCard);
   app.querySelector('[data-action="challenge"]').addEventListener('click', shareChallenge);
   app.querySelector('[data-action="download-story"]').addEventListener('click', () => downloadCard('story'));
   app.querySelector('[data-action="download-feed"]').addEventListener('click', () => downloadCard('feed'));
@@ -225,9 +227,9 @@ function renderResult() {
 
 function shareText() {
   const { archetype } = result;
-  return `Mera result: ${archetype.emoji} ${archetype.title}\n"${archetype.description}"\n\nTu kya niklega? Andhbhakt, Chamcha ya kuch aur? 2 minute ka quiz:\n${config.url}`;
+  return `Mera result: ${archetype.emoji} *${archetype.title}*\n"${archetype.description}" 😂\n\nTu kya niklega? Andhbhakt, Chamcha ya kuch aur?\n${questions.length} sawaal, 2 minute: ${config.url}`;
 }
-function challengeText() { return `Maine Andhbhakt Ya Chamcha? quiz de diya. Ab teri baari 😏\nResult screenshot karke bhejna, cheating nahi.\n${config.url}`; }
+function challengeText() { return `Bhai, ek political reality check de. Main toh ${result.archetype.emoji} ${shortTitle(result.archetype)} nikla. Tu kya niklega? 😏\nResult screenshot karke bhejna, cheating nahi.\n${config.url}`; }
 
 async function shareOrCopy(text, copiedMessage) {
   if (navigator.share) {
@@ -291,7 +293,7 @@ export function drawCard(canvas, archetype, format, url) {
   // Brand line and stamp
   ctx.fillStyle = colours.jamun; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
   ctx.font = `${story ? 54 : 46}px "Yatra One", serif`;
-  ctx.fillText(config.shortBrand, pad, L.top - (story ? 40 : 30));
+  ctx.fillText(config.brand, pad, L.top - (story ? 40 : 30));
   ctx.save(); ctx.translate(W - pad - 80, L.top - (story ? 60 : 44)); ctx.rotate(.21);
   ctx.strokeStyle = colours.jamun; ctx.lineWidth = 6;
   ctx.beginPath(); ctx.arc(0, 0, story ? 86 : 74, 0, Math.PI * 2); ctx.stroke();
@@ -347,12 +349,35 @@ export function drawCard(canvas, archetype, format, url) {
   centredLines(ctx, roast, cx - 7, panelTop + roastSize * .7 + lh * .78, lh);
 }
 
-async function downloadCard(format) {
+async function renderCard(format) {
   try { await Promise.all([document.fonts.load('60px "Yatra One"'), document.fonts.load('600 40px Hind'), document.fonts.load('700 40px Hind')]); } catch { /* fall back to system fonts */ }
   const canvas = document.createElement('canvas');
   drawCard(canvas, result.archetype, format, displayUrl());
+  return canvas;
+}
+const cardName = (format) => `andhbhakt-ya-chamcha-${result.archetype.id}-${format}.png`;
+
+// Phones that support sharing files (most Android and iOS browsers) can send the card image
+// straight to WhatsApp Status, Instagram Stories etc. Others fall back to download.
+function canShareFiles() {
+  try { return Boolean(navigator.canShare && navigator.canShare({ files: [new File([''], 'x.png', { type: 'image/png' })] })); } catch { return false; }
+}
+
+async function shareCard() {
+  const canvas = await renderCard('story');
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+  const file = new File([blob], cardName('story'), { type: 'image/png' });
+  try {
+    await navigator.share({ files: [file], text: shareText() });
+  } catch (error) {
+    if (error.name !== 'AbortError') downloadCard('story');
+  }
+}
+
+async function downloadCard(format) {
+  const canvas = await renderCard(format);
   const link = document.createElement('a');
-  link.download = `andhbhakt-ya-chamcha-${result.archetype.id}-${format}.png`;
+  link.download = cardName(format);
   link.href = canvas.toDataURL('image/png');
   link.click();
   showToast('Card download ho gaya. Ab Status pe lagao.');

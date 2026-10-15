@@ -49,7 +49,7 @@ p { margin: 0; }
 /* Header */
 .site-header { position: relative; z-index: 2; width: min(1140px, calc(100% - 32px)); margin: 0 auto; padding: 18px 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font-family: var(--display); font-size: 1.3rem; line-height: 1; }
-.brand-mark { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; border: var(--edge); background: var(--haldi); box-shadow: 3px 3px 0 var(--jamun); color: var(--jamun); font-family: var(--display); font-size: .85rem; transform: rotate(-8deg); }
+.brand-mark { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; border: var(--edge); background: var(--haldi); box-shadow: 3px 3px 0 var(--jamun); color: var(--rani); font-family: var(--display); font-size: 1.6rem; line-height: 1; padding-top: 4px; transform: rotate(-8deg); }
 .header-note { font-size: .9rem; color: var(--jamun-soft); }
 body.is-landing { background: var(--rani); }
 body.is-landing .site-header, body.is-landing .header-note { color: var(--chalk); }

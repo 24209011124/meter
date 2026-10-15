@@ -1,158 +1,122 @@
-// Each option maps to exactly one reasoning habit. The result is the habit
-// a person picked most often, so it is transparent and explainable.
-// No option names or hints at any real party or leader.
+// Each option maps to exactly one reasoning habit, and its wording must describe that habit:
+//   andhbhakt   – genuinely believes the leader can do no wrong; evidence barely moves them
+//   chamcha     – knows their side may be wrong, but makes excuses, changes the subject or points at the other side
+//   factChecker – checks sources, context and evidence before believing or forwarding
+//   spectator   – enjoys the drama and memes, mostly watches from the sidelines
+//   manifesto   – tracks promises, deadlines, delivery and outcomes
+//   independent – same rules for every side, gives credit across lines, can change their mind
+//
+// `signature: true` marks the single answer that most clearly shows a habit. Each habit has exactly one,
+// on a different question. Signatures are used only to break ties (see scoring.js).
+// No option names or hints at any real party, leader or event.
 
-export const questions = [
+const bilingual = [
   {
-    title: 'WhatsApp University',
+    title: ['WhatsApp University', 'WhatsApp University'],
     emoji: '📲',
-    prompt: 'Tumhari favourite political side ke favour mein ek viral claim aata hai. Source missing hai. Kya karoge?',
+    prompt: [
+      'Tumhari favourite side ke favour mein ek viral claim aata hai. Source missing hai. Kya karoge?',
+      'A viral claim that helps your favourite side lands in the group. There is no source. What do you do?',
+    ],
     options: [
-      { text: 'Pakka kuch toh sach hoga. Apne leader ke against thodi hai!', habit: 'andhbhakt' },
-      { text: 'Forward karo. Opposition ko jawab milna chahiye!', habit: 'chamcha' },
-      { text: 'Source aur original report check karunga.', habit: 'factChecker' },
-      { text: 'Politics ka forward hai. Seen karke aage badho.', habit: 'spectator' },
+      { habit: 'andhbhakt', text: ['Apne leader ke baare mein hai? Toh sach hi hoga.', 'It is about my leader? Then it must be true.'] },
+      { habit: 'chamcha', text: ['Sach ho ya na ho, opposition ko jawab toh milna chahiye. Forward!', 'True or not, the other side deserves a reply. Forward!'] },
+      { habit: 'factChecker', text: ['Pehle source aur original report dhoondhunga.', 'I will find the source and the original report first.'], signature: true },
+      { habit: 'spectator', text: ['Political forward hai. Seen karke chhod do.', 'It is a political forward. Leave it on seen.'] },
     ],
   },
   {
-    title: 'Same kaam, different reaction',
+    title: ['Same kaam, different reaction', 'Same action, different reaction'],
     emoji: '⚖️',
-    prompt: 'Jo decision opposition ke time tumne galat bola tha, wahi tumhari side le leti hai. Ab?',
+    prompt: [
+      'Jo decision opposition ke time tumne galat bola tha, wahi ab tumhari side le leti hai. Ab?',
+      'Your side now takes the same decision you called wrong when the other side took it. Now what?',
+    ],
     options: [
-      { text: 'Mere leader ke paas koi reason hoga jo humein nahi pata.', habit: 'andhbhakt' },
-      { text: 'Pehle opposition ke time unhone kya kiya tha, woh dekho!', habit: 'chamcha' },
-      { text: 'Dono cases ka context aur evidence compare karunga.', habit: 'factChecker' },
-      { text: 'Party koi bhi ho, actual result aur delivery matter karte hain.', habit: 'manifesto' },
+      { habit: 'andhbhakt', text: ['Mere leader ne liya hai, toh zaroor koi bada reason hoga.', 'My leader took it, so there must be a big reason.'] },
+      { habit: 'chamcha', text: ['Haan theek hai, par pehle unhone kya kiya tha woh bhi toh dekho!', 'Fine, but look at what they did first!'], signature: true },
+      { habit: 'independent', text: ['Tab galat tha toh ab bhi galat hai. Rule sabke liye same.', 'If it was wrong then, it is wrong now. Same rule for everyone.'] },
+      { habit: 'manifesto', text: ['Decision ka actual result kya nikla, wahi dekhunga.', 'I will judge it by what the decision actually delivered.'] },
     ],
   },
   {
-    title: 'Family dinner ka political test',
+    title: ['Family dinner ka political test', 'The family-dinner test'],
     emoji: '🍛',
-    prompt: 'Friends ke saamne tumhare favourite leader ko credible evidence se challenge kiya jaata hai. Tum?',
+    prompt: [
+      'Family dinner pe koi credible evidence ke saath tumhare favourite leader ki galti dikhata hai. Tum?',
+      'At family dinner, someone shows credible evidence of a mistake by your favourite leader. You?',
+    ],
     options: [
-      { text: 'Evidence genuine hai toh maanna padega, chahe awkward ho.', habit: 'independent' },
-      { text: 'Ek minute, source aur full context toh check karne do.', habit: 'factChecker' },
-      { text: 'Achha? Pehle batao tumhari party ne kya kiya tha!', habit: 'chamcha' },
-      { text: 'Politics chhodo yaar, samosa thanda ho raha hai.', habit: 'spectator' },
+      { habit: 'andhbhakt', text: ['Ye sab propaganda hai. Mera leader aisa kar hi nahi sakta.', 'This is propaganda. My leader would never do that.'], signature: true },
+      { habit: 'chamcha', text: ['Achha? Aur tumhare leader ne jo kiya, uska kya?', 'Really? And what about what your leader did?'] },
+      { habit: 'independent', text: ['Evidence sahi hai toh maanunga. Awkward hai, par galat toh galat hai.', 'If the evidence holds, I will accept it. Awkward, but wrong is wrong.'] },
+      { habit: 'spectator', text: ['Politics chhodo yaar, samosa thanda ho raha hai.', 'Forget politics, yaar. The samosas are getting cold.'] },
     ],
   },
   {
-    title: 'Manifesto ya marketing?',
+    title: ['Manifesto ya marketing?', 'Manifesto or marketing?'],
     emoji: '🎤',
-    prompt: 'Election mein tumhare area ke liye paanch bade promises kiye gaye. Tumhara next move?',
+    prompt: [
+      'Election mein tumhare area ke liye paanch bade promises kiye gaye. Tumhara next move?',
+      'Five big promises are made for your area during the election. Your next move?',
+    ],
     options: [
-      { text: 'Leader ne bola hai, toh kuch soch ke hi bola hoga.', habit: 'andhbhakt' },
-      { text: 'Promises aur deadlines note karke progress track karunga.', habit: 'manifesto' },
-      { text: 'Pichhle promises ka report card check karunga.', habit: 'independent' },
-      { text: 'Speech sab dete hain. Pehle sources aur details verify karunga.', habit: 'factChecker' },
+      { habit: 'andhbhakt', text: ['Leader ne bola hai, toh ho hi jaayega. Tension kya hai?', 'The leader said it, so it will happen. Why worry?'] },
+      { habit: 'manifesto', text: ['Promises aur deadlines note karta hoon. Baad mein hisaab hoga.', 'I note the promises and deadlines. We will settle accounts later.'], signature: true },
+      { habit: 'factChecker', text: ['Pehle check karunga ki paisa aur plan kahan se aayega.', 'First I check where the money and the plan will come from.'] },
+      { habit: 'spectator', text: ['Har election mein yahi hota hai. Main kyun dimaag lagaun?', 'This happens every election. Why should I bother?'] },
     ],
   },
   {
-    title: 'Debate ka asli winner',
+    title: ['Debate ka asli winner', 'Who really won the debate?'],
     emoji: '📺',
-    prompt: 'Tumhari side ka spokesperson sawaal ka seedha jawab nahi deta, lekin opponent bhi interrupt kar raha hai. Tum?',
+    prompt: [
+      'TV debate mein tumhari side ka spokesperson seedha jawab nahi deta. Opponent bhi beech mein interrupt kar raha hai. Tum?',
+      'On a TV debate, your side’s spokesperson dodges the question. The opponent keeps interrupting too. You?',
+    ],
     options: [
-      { text: 'Opponent ko tameez nahi hai. Bas wahi main point hai.', habit: 'chamcha' },
-      { text: 'Sawaal kya tha aur jawab mila ya nahi?', habit: 'manifesto' },
-      { text: 'Clip viral hone do. Meme material chahiye.', habit: 'spectator' },
-      { text: 'Full debate dekhunga. Ek clip se conclusion nahi nikalta.', habit: 'factChecker' },
+      { habit: 'chamcha', text: ['Asli issue toh opponent ki badtameezi hai. Jawab ki kya zaroorat?', 'The real issue is the opponent’s rudeness. Who needs an answer?'] },
+      { habit: 'manifesto', text: ['Sawaal kya tha aur jawab mila ya nahi? Bas itna batao.', 'What was the question, and was it answered? That is all I want.'] },
+      { habit: 'spectator', text: ['Popcorn ready. Meme material mil gaya.', 'Popcorn ready. Meme material secured.'], signature: true },
+      { habit: 'factChecker', text: ['Poora debate dekhunga. 30-second clip se conclusion nahi.', 'I will watch the full debate. No conclusions from a 30-second clip.'] },
     ],
   },
   {
-    title: 'Election haar gaye',
+    title: ['Election haar gaye', 'We lost the election'],
     emoji: '🗳️',
-    prompt: 'Tumhari preferred party election haar gayi. Group chat mein kya hoga?',
+    prompt: [
+      'Tumhari preferred party election haar gayi. Group chat mein tumhara message?',
+      'Your preferred party lost the election. Your message in the group chat?',
+    ],
     options: [
-      { text: 'Kuch toh setting hui hogi. Aise kaise haar sakte hain?', habit: 'andhbhakt' },
-      { text: 'Winners ki galtiyan ginwao. Unko bhi toh expose karna hai!', habit: 'chamcha' },
-      { text: 'Apni side ki mistakes aur voters ke feedback ka analysis karunga.', habit: 'independent' },
-      { text: 'Ab winners ke promises aur performance track karenge.', habit: 'manifesto' },
+      { habit: 'andhbhakt', text: ['Kuch toh gadbad hui hai. Mera leader aise haar hi nahi sakta.', 'Something is fishy. My leader cannot lose like this.'] },
+      { habit: 'factChecker', text: ['Gadbad ke forwards aayenge. Main pehle evidence maangunga.', '“It was rigged” forwards will come. I will ask for evidence first.'] },
+      { habit: 'independent', text: ['Humari side ne bhi galtiyan ki. Voters ka message samajhna padega.', 'Our side made mistakes too. We need to hear what voters said.'] },
+      { habit: 'manifesto', text: ['Ab jeetne walon ke promises track karenge. Clock shuru.', 'Now we track the winners’ promises. The clock starts today.'] },
     ],
   },
   {
-    title: 'Opposition ko credit?',
+    title: ['Opposition ko credit?', 'Credit to the other side?'],
     emoji: '😶',
-    prompt: 'Opposing party ek genuinely achha kaam karti hai, jiska tumhe fayda bhi hota hai. Tum?',
+    prompt: [
+      'Doosri party ek genuinely achha kaam karti hai, jiska tumhe bhi fayda hota hai. Tum?',
+      'The other party does something genuinely good that benefits you too. You?',
+    ],
     options: [
-      { text: 'Achha kaam hai toh credit dunga, party koi bhi ho.', habit: 'independent' },
-      { text: 'Pehle verify karunga ki result sach mein achha hai ya nahi.', habit: 'factChecker' },
-      { text: 'Fayda le lunga, par unki tareef? Itni bhi nahi.', habit: 'chamcha' },
-      { text: 'Ek kaam se kya hota hai? Long-term delivery dekhunga.', habit: 'manifesto' },
+      { habit: 'independent', text: ['Achha kaam hai toh credit dunga. Party koi bhi ho.', 'Good work gets credit from me. Whatever the party.'], signature: true },
+      { habit: 'factChecker', text: ['Pehle data dekhunga ki sach mein fayda hua ya sirf PR hai.', 'I will check the data to see if it really helped or is just PR.'] },
+      { habit: 'chamcha', text: ['Fayda le lunga, par tareef? Asli idea toh humara tha.', 'I will take the benefit, but praise? It was really our idea.'] },
+      { habit: 'manifesto', text: ['Ek kaam se kya hota hai? Poora report card dekhunga.', 'One good deed is not enough. I want the full report card.'] },
     ],
   },
 ];
 
-const englishTitles = [
-  'WhatsApp University',
-  'Same action, different reaction',
-  'The family-dinner political test',
-  'Manifesto or marketing?',
-  'Who really won the debate?',
-  'We lost the election',
-  'Give the opposition credit?',
-];
-
-const englishPrompts = [
-  'A viral claim supporting your preferred political side appears. There is no source. What do you do?',
-  'Your side takes the same decision that you called wrong when the opposition did it. Now what?',
-  'Friends challenge your favourite leader with credible evidence. What do you do?',
-  'Five big promises are made for your area during an election. What is your next move?',
-  'Your side’s spokesperson does not answer the question directly, but the opponent is also interrupting. What do you do?',
-  'Your preferred party loses the election. What happens in the group chat?',
-  'The opposing party does something genuinely good that benefits you too. What do you do?',
-];
-
-const englishOptions = [
-  [
-    'It must be partly true. It is not attacking my leader!',
-    'Forward it. The opposition needs an answer!',
-    'I will check the source and the original report.',
-    'It is a political forward. I will see it and move on.',
-  ],
-  [
-    'My leader must have a reason we do not know about.',
-    'First look at what they did when they were in opposition!',
-    'I will compare the context and evidence in both cases.',
-    'Party aside, the actual result and delivery are what matter.',
-  ],
-  [
-    'If the evidence is genuine, I have to accept it, even if it is awkward.',
-    'One minute. Let me check the source and full context.',
-    'Really? First tell me what your party has done!',
-    'Leave politics, yaar. The samosas are getting cold.',
-  ],
-  [
-    'The leader said it, so they must have thought it through.',
-    'I will note the promises and deadlines and track progress.',
-    'I will check the report card for previous promises.',
-    'Everyone gives speeches. I will verify the sources and details first.',
-  ],
-  [
-    'The opponent has no manners. That is the main point.',
-    'What was the question, and was it answered?',
-    'Let the clip go viral. I need meme material.',
-    'I will watch the full debate. One clip is not enough for a conclusion.',
-  ],
-  [
-    'Something must have been fixed. How could we lose like that?',
-    'List the winners’ mistakes. They need to be exposed too!',
-    'I will analyse my side’s mistakes and the voters’ feedback.',
-    'Now we will track the winners’ promises and performance.',
-  ],
-  [
-    'If it is good work, I will give credit. Party aside.',
-    'I will first verify whether the result is genuinely good.',
-    'I will take the benefit, but praise them? Not that much.',
-    'One good action proves nothing. I will watch long-term delivery.',
-  ],
-];
-
-export const englishQuestions = questions.map((question, questionIndex) => ({
-  ...question,
-  title: englishTitles[questionIndex],
-  prompt: englishPrompts[questionIndex],
-  options: question.options.map((option, optionIndex) => ({
-    ...option,
-    text: englishOptions[questionIndex][optionIndex],
-  })),
+const pick = (lang) => bilingual.map((question) => ({
+  title: question.title[lang],
+  emoji: question.emoji,
+  prompt: question.prompt[lang],
+  options: question.options.map((option) => ({ habit: option.habit, text: option.text[lang], signature: Boolean(option.signature) })),
 }));
+
+export const questions = pick(0);
+export const englishQuestions = pick(1);
