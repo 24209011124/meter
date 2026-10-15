@@ -6,7 +6,8 @@ import { archetypes, getResult, rankHabits } from './scoring.js';
 const SITE_URL = 'https://24209011124.github.io/meter';
 
 const config = {
-  brand: 'Bhakt Ya Chamcha?',
+  brand: 'Andhbhakt Ya Chamcha?',
+  shortBrand: 'AB ya C',
   url: SITE_URL || window.location.origin,
 };
 
@@ -52,8 +53,8 @@ function renderLanding() {
       <section class="hero-band">
         <div class="hero page-width">
           <div>
-            <h1><span>Bhakt Ho</span><span>Ya Chamcha?</span></h1>
-            <p class="hero-lede">10 sawaal. Ek political reality check. Phir pata chalega group chat mein asli Bhakt, Chamcha aur Fact-Checker kaun hai. 👀</p>
+            <h1><span>Andhbhakt Ya</span><span>Chamcha?</span></h1>
+            <p class="hero-lede">7 sawaal. Ek political reality check. Phir pata chalega group chat mein asli Bhakt, Chamcha aur Fact-Checker kaun hai. 👀</p>
             ${languageToggle()}
             <button class="button button-primary button-big" data-action="start">Chalo, Reality Check Lo 🔥</button>
             <p class="hero-note">2 min Quiz. Signup nahi.</p>
@@ -68,7 +69,7 @@ function renderLanding() {
       <section class="steps page-width" aria-labelledby="steps-title">
         <h2 id="steps-title">Kaise kaam karta hai</h2>
         <ol>
-          <li><strong>10 sawaal ka jawaab do</strong><p>Political situations jo har group chat mein hoti hain. Sach sach chuno.</p></li>
+          <li><strong>7 sawaal ka jawaab do</strong><p>Political situations jo har group chat mein hoti hain. Sach sach chuno.</p></li>
           <li><strong>Apni habit dekho</strong><p>Tumhare answers ka pattern decide karega tumhara result. Phir milega tumhara political personality roast. 😂</p></li>
           <li><strong>Dost ko challenge karo</strong><p>Apna result share karo, dost ko challenge karo. Dekhte hain kaun apna result accept karta hai aur kaun appeal file karta hai. 😂</p></li>
         </ol>
@@ -82,7 +83,7 @@ function renderLanding() {
         </div>
         <div class="habit-note">
           <div class="note-emoji" aria-hidden="true">🤝</div>
-          <div><strong>Bhakt aur Chamcha yahan party nahi, aadatein hain.</strong><p>Bhakt matlab "mera leader galat ho hi nahi sakta." Chamcha matlab "meri side galat ho hi nahi sakti." Ye dono kisi bhi side ke supporter mein mil sakti hain. Ye quiz kisi party ko judge nahi karta.</p></div>
+          <div><strong>Andhbhakt aur Chamcha yahan party nahi, aadatein hain.</strong><p>Andhbhakt matlab "mera leader galat ho hi nahi sakta." Chamcha matlab "meri side galat ho hi nahi sakti." Ye dono kisi bhi side ke supporter mein mil sakti hain. Ye quiz kisi party ko judge nahi karta.</p></div>
         </div>
       </section>
 
@@ -109,6 +110,7 @@ function renderQuiz() {
         ${activeQuestions().map((_, index) => `<i class="${index < currentQuestion ? 'done' : index === currentQuestion ? 'current' : ''}"></i>`).join('')}
       </div>
       <div class="question-card">
+        <p class="question-kicker">${question.emoji} ${question.title}</p>
         <h1 id="question-title">${question.prompt}</h1>
         <fieldset class="options">
           <legend class="sr-only">${language === 'english' ? 'Choose one answer' : 'Ek jawaab chuno'}</legend>
@@ -156,7 +158,7 @@ function renderResult() {
   setPage('result');
   const { archetype, runnerUp, counts, last } = result;
   const breakdown = rankHabits(counts, last).filter((habit) => counts[habit] > 0).map((habit) => `
-    <li><span>${archetypes[habit].emoji} ${shortTitle(archetypes[habit])}</span><span class="habit-bar" aria-hidden="true"><i class="c-${habit}" style="width:${counts[habit] * 10}%"></i></span><span>${counts[habit]} / 10</span></li>`).join('');
+    <li><span>${archetypes[habit].emoji} ${shortTitle(archetypes[habit])}</span><span class="habit-bar" aria-hidden="true"><i class="c-${habit}" style="width:${counts[habit] * (100 / questions.length)}%"></i></span><span>${counts[habit]} / ${questions.length}</span></li>`).join('');
   const waLink = `https://wa.me/?text=${encodeURIComponent(shareText())}`;
   app.innerHTML = `
     <section class="result-band c-${archetype.id}">
@@ -195,7 +197,7 @@ function renderResult() {
       </div>
 
       <div class="habit-breakdown">
-        <h2>Tumhare 10 jawaab</h2>
+        <h2>Tumhare 7 jawaab</h2>
         <p>Har jawaab ek habit se juda tha. Ye raha poora hisaab.</p>
         <ul>${breakdown}</ul>
       </div>
@@ -204,7 +206,7 @@ function renderResult() {
         <button class="text-button" data-action="restart">Quiz dobara do</button>
         <button class="text-button" data-action="method" aria-expanded="false">Result kaise decide hota hai?</button>
       </div>
-      <div class="method-note" hidden><strong>Transparent hai, scientific nahi.</strong> Har answer ek reasoning habit se map hota hai. Tumhare 10 answers ka overall pattern primary result aur runner-up decide karta hai. Tie hone par tumhara sabse recent matching answer tie-break karta hai. Koi party, leader ya personal data involved nahi.</div>
+      <div class="method-note" hidden><strong>Transparent hai, scientific nahi.</strong> Har answer ek reasoning habit se map hota hai. Tumhare 7 answers ka overall pattern primary result aur runner-up decide karta hai. Tie hone par tumhara sabse recent matching answer tie-break karta hai. Koi party, leader ya personal data involved nahi.</div>
       <p class="result-note">Ye result entertainment ke liye hai. Ye tumhari political affiliation ke baare mein koi claim nahi karta.</p>
     </section>
   `;
@@ -223,9 +225,9 @@ function renderResult() {
 
 function shareText() {
   const { archetype } = result;
-  return `Mera result: ${archetype.emoji} ${archetype.title}\n"${archetype.description}"\n\nTu kya niklega? Bhakt, Chamcha ya kuch aur? 2 minute ka quiz:\n${config.url}`;
+  return `Mera result: ${archetype.emoji} ${archetype.title}\n"${archetype.description}"\n\nTu kya niklega? Andhbhakt, Chamcha ya kuch aur? 2 minute ka quiz:\n${config.url}`;
 }
-function challengeText() { return `Maine Bhakt Ya Chamcha? quiz de diya. Ab teri baari 😏\nResult screenshot karke bhejna, cheating nahi.\n${config.url}`; }
+function challengeText() { return `Maine Andhbhakt Ya Chamcha? quiz de diya. Ab teri baari 😏\nResult screenshot karke bhejna, cheating nahi.\n${config.url}`; }
 
 async function shareOrCopy(text, copiedMessage) {
   if (navigator.share) {
@@ -289,7 +291,7 @@ export function drawCard(canvas, archetype, format, url) {
   // Brand line and stamp
   ctx.fillStyle = colours.jamun; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
   ctx.font = `${story ? 54 : 46}px "Yatra One", serif`;
-  ctx.fillText('Bhakt Ya Chamcha?', pad, L.top - (story ? 40 : 30));
+  ctx.fillText(config.shortBrand, pad, L.top - (story ? 40 : 30));
   ctx.save(); ctx.translate(W - pad - 80, L.top - (story ? 60 : 44)); ctx.rotate(.21);
   ctx.strokeStyle = colours.jamun; ctx.lineWidth = 6;
   ctx.beginPath(); ctx.arc(0, 0, story ? 86 : 74, 0, Math.PI * 2); ctx.stroke();
@@ -350,7 +352,7 @@ async function downloadCard(format) {
   const canvas = document.createElement('canvas');
   drawCard(canvas, result.archetype, format, displayUrl());
   const link = document.createElement('a');
-  link.download = `bhakt-ya-chamcha-${result.archetype.id}-${format}.png`;
+  link.download = `andhbhakt-ya-chamcha-${result.archetype.id}-${format}.png`;
   link.href = canvas.toDataURL('image/png');
   link.click();
   showToast('Card download ho gaya. Ab Status pe lagao.');

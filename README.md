@@ -1,4 +1,4 @@
-# Bhakt Ya Chamcha?
+# Andhbhakt Ya Chamcha?
 
 Local-first static MVP for a humorous political reasoning quiz.
 
