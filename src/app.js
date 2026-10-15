@@ -1,7 +1,8 @@
 // When you change any file under src/, bump the ?v= value here, in scoring.js and in index.html
 // (tests/scoring.test.js checks they all match) so returning visitors never mix old and new files.
-import { englishQuestions, questions } from './questions.js?v=2026-10-15';
-import { archetypes, chances, getResult, rankHabits } from './scoring.js?v=2026-10-15';
+import { englishQuestions, questions } from './questions.js?v=2026-10-16';
+import { archetypes, chances, getResult, rankHabits } from './scoring.js?v=2026-10-16';
+import { fillTokens, findParty, initials, neutralChoices, parties, personalWords } from './parties.js?v=2026-10-16';
 
 // Public address used in share messages and on result cards.
 const SITE_URL = 'https://andhbhaktyachamcha.in';
@@ -22,11 +23,18 @@ let currentQuestion = 0;
 let result = null;
 let advancing = false;
 let language = 'hinglish';
+let view = 'landing';
+// Party/leader picked before the quiz. Kept only in this variable: never scored, stored, sent to analytics or shown on results.
+let preference = null;
+let resumeQuestion = null;
 
 const optionLetter = (index) => String.fromCharCode(65 + index);
 const shortTitle = (archetype) => archetype.title.replace(': ON', '');
 const displayUrl = () => config.url.replace(/^https?:\/\//, '').replace(/\/$/, '');
 const activeQuestions = () => language === 'english' ? englishQuestions : questions;
+const L = () => (language === 'english' ? 1 : 0);
+const t = (hinglish, english) => (language === 'english' ? english : hinglish);
+const chosenParty = () => (preference?.partyId ? findParty(preference.partyId) : null);
 
 function languageToggle() {
   return `<div class="language-toggle" role="group" aria-label="Question language"><span>Language</span><button class="${language === 'hinglish' ? 'active' : ''}" data-language="hinglish" aria-pressed="${language === 'hinglish'}">Hinglish</button><button class="${language === 'english' ? 'active' : ''}" data-language="english" aria-pressed="${language === 'english'}">English</button></div>`;
@@ -35,12 +43,12 @@ function languageToggle() {
 function bindLanguageToggle() {
   app.querySelectorAll('[data-language]').forEach((button) => button.addEventListener('click', () => {
     language = button.dataset.language;
-    if (document.body.classList.contains('is-landing')) renderLanding();
-    else renderQuiz();
+    ({ landing: renderLanding, party: renderParty, leader: renderLeader, quiz: renderQuiz })[view]?.();
   }));
 }
 
 function setPage(name) {
+  view = name;
   document.body.classList.toggle('is-landing', name === 'landing');
   window.scrollTo({ top: 0 });
 }
@@ -57,6 +65,7 @@ function renderLanding() {
             <p class="hero-lede">7 sawaal. Ek political reality check. Phir pata chalega group chat mein asli Bhakt, Chamcha aur Fact-Checker kaun hai. 👀</p>
             ${languageToggle()}
             <button class="button button-primary button-big" data-action="start">Chalo, Reality Check Lo 🔥</button>
+            <p class="oath"><span aria-hidden="true">🤚</span> <em>"Jo kahunga sach kahunga, sach ke siwa kuch nahi kahunga."</em><small>Haath dil pe, phone haath mein. 📱😂</small></p>
             <p class="hero-note">2 minute. Koi signup nahi. Tumhare jawaab kahin save nahi hote.</p>
           </div>
           <div class="ticket-stack" aria-hidden="true">
@@ -97,9 +106,113 @@ function renderLanding() {
   app.querySelectorAll('[data-action="start"]').forEach((button) => button.addEventListener('click', startQuiz));
 }
 
+
+const privacyLine = () => t(
+  'Ye score mein count nahi hota. Bas sawaal tumhari situation ke hisaab se dikhenge. Tumhara jawaab kahin save ya send nahi hota.',
+  'This is not scored. It only makes the questions match your situation. Your choice is never saved or sent anywhere.'
+);
+
+function renderParty() {
+  setPage('party');
+  const current = preference?.partyId;
+  app.innerHTML = `
+    <section class="pick-shell page-width" aria-labelledby="pick-title">
+      <div class="quiz-top"><span>${t('Shuru karne se pehle', 'Before we start')}</span><button class="text-button" data-action="home">${t('Band karo', 'Exit')}</button></div>
+      ${languageToggle()}
+      <div class="pick-head">
+        <div class="pick-emoji" aria-hidden="true">🗳️</div>
+        <h1 id="pick-title">${t('Aaj chunaav ho, toh vote kisko doge?', 'If the election were today, who gets your vote?')}</h1>
+        <p class="pick-note"><span aria-hidden="true">🔒</span> ${privacyLine()}</p>
+      </div>
+      <div class="party-grid" role="list">
+        ${parties.map((party) => `
+          <button class="party-card ${current === party.id ? 'selected' : ''}" role="listitem" data-party="${party.id}" aria-pressed="${current === party.id}">
+            <span class="party-symbol ${party.symbol ? '' : 'text-symbol'}" aria-hidden="true">${party.symbol || party.short.slice(0, 3)}</span>
+            <span class="party-short">${party.short}</span>
+            <span class="party-name">${party.name}</span>
+          </button>`).join('')}
+      </div>
+      <div class="neutral-row">
+        ${neutralChoices.map((choice) => `<button class="neutral-chip ${current === choice.id ? 'selected' : ''}" data-party="${choice.id}" aria-pressed="${current === choice.id}"><span aria-hidden="true">${choice.emoji}</span> ${choice.label[L()]}</button>`).join('')}
+      </div>
+      <p class="pick-small">${t('Party symbols yahan sirf emoji hain, official logo nahi. Ye site kisi party se judi nahi hai.', 'Party symbols here are just emoji, not official logos. This site is not linked to any party.')}</p>
+    </section>
+  `;
+  bindLanguageToggle();
+  app.querySelector('[data-action="home"]').addEventListener('click', renderLanding);
+  app.querySelectorAll('[data-party]').forEach((button) => button.addEventListener('click', () => {
+    const partyId = button.dataset.party;
+    const party = findParty(partyId);
+    preference = { partyId, leader: preference?.partyId === partyId ? preference.leader : null };
+    if (party && party.leaders.length) renderLeader();
+    else { preference.leader = null; beginQuestions(); }
+  }));
+  const title = app.querySelector('#pick-title'); title.setAttribute('tabindex', '-1'); title.focus({ preventScroll: true });
+}
+
+function renderLeader() {
+  const party = chosenParty();
+  if (!party) { beginQuestions(); return; }
+  setPage('leader');
+  app.innerHTML = `
+    <section class="pick-shell page-width" aria-labelledby="pick-title">
+      <div class="quiz-top"><button class="text-button" data-action="back-party">${t('Party badlo', 'Change party')}</button><button class="text-button" data-action="home">${t('Band karo', 'Exit')}</button></div>
+      ${languageToggle()}
+      <div class="pick-head">
+        <div class="pick-emoji ${party.symbol ? '' : 'party-badge-big'}" aria-hidden="true">${party.symbol || party.short.slice(0, 3)}</div>
+        <h1 id="pick-title">${t(`${party.short} mein tumhara favourite leader kaun?`, `Your favourite ${party.short} leader?`)}</h1>
+        <p class="pick-note"><span aria-hidden="true">🔒</span> ${privacyLine()}</p>
+      </div>
+      <div class="leader-grid" role="list">
+        ${party.leaders.map((name) => `
+          <button class="leader-card ${preference.leader === name ? 'selected' : ''}" role="listitem" data-leader="${name}" aria-pressed="${preference.leader === name}">
+            <span class="leader-avatar" aria-hidden="true">${initials(name)}</span>
+            <span class="leader-name">${name}</span>
+          </button>`).join('')}
+        <button class="leader-card leader-none" role="listitem" data-leader="">
+          <span class="leader-avatar" aria-hidden="true">${party.symbol || '🗳️'}</span>
+          <span class="leader-name">${t('Party pasand hai, koi ek leader nahi', 'I like the party, not one leader')}</span>
+        </button>
+      </div>
+    </section>
+  `;
+  bindLanguageToggle();
+  app.querySelector('[data-action="home"]').addEventListener('click', renderLanding);
+  app.querySelector('[data-action="back-party"]').addEventListener('click', renderParty);
+  app.querySelectorAll('[data-leader]').forEach((button) => button.addEventListener('click', () => {
+    preference.leader = button.dataset.leader || null;
+    beginQuestions();
+  }));
+}
+
+function teamChip() {
+  const party = chosenParty();
+  if (!party && preference?.partyId !== 'other') return '';
+  const label = party ? `${party.symbol ? `${party.symbol} ` : ''}${party.short}${preference.leader ? ` · ${preference.leader}` : ''}` : t('🗳️ Tumhari party', '🗳️ Your party');
+  return `<div class="team-chip"><span>${t('Tumhari team:', 'Your team:')} <strong>${label}</strong></span><button class="text-button" data-action="change-team">${t('Badlo', 'Change')}</button></div>`;
+}
+
+function sceneMarkup(question) {
+  const party = chosenParty();
+  let sticker = '';
+  if (question.about === 'leader' && party && preference.leader) {
+    sticker = `<div class="scene-sticker leader-sticker"><span class="leader-avatar small">${initials(preference.leader)}</span><span>${preference.leader}</span></div>`;
+  } else if (question.about && party) {
+    sticker = `<div class="scene-sticker party-sticker"><span class="party-symbol small ${party.symbol ? '' : 'text-symbol'}">${party.symbol || party.short.slice(0, 3)}</span><span>${party.short}</span></div>`;
+  }
+  return `
+    <div class="scene c-${question.scene.bg} ${sticker ? 'has-sticker' : ''}" aria-hidden="true">
+      <span class="scene-main">${question.scene.main}</span>
+      ${question.scene.stickers.map((emoji, index) => `<span class="scene-float f${index + 1}">${emoji}</span>`).join('')}
+      ${sticker}
+    </div>`;
+}
+
 function renderQuiz() {
   setPage('quiz');
-  const question = activeQuestions()[currentQuestion];
+  const raw = activeQuestions()[currentQuestion];
+  const words = personalWords(preference, L());
+  const question = { ...raw, prompt: fillTokens(raw.prompt, words), options: raw.options.map((option) => ({ ...option, text: fillTokens(option.text, words) })) };
   const selected = answers[currentQuestion];
   const isLast = currentQuestion === questions.length - 1;
   app.innerHTML = `
@@ -109,7 +222,9 @@ function renderQuiz() {
       <div class="progress-dots" role="progressbar" aria-valuemin="1" aria-valuemax="${activeQuestions().length}" aria-valuenow="${currentQuestion + 1}" aria-label="Quiz progress">
         ${activeQuestions().map((_, index) => `<i class="${index < currentQuestion ? 'done' : index === currentQuestion ? 'current' : ''}"></i>`).join('')}
       </div>
+      ${teamChip()}
       <div class="question-card">
+        ${sceneMarkup(question)}
         <p class="question-kicker">${question.emoji} ${question.title}</p>
         <h1 id="question-title">${question.prompt}</h1>
         <fieldset class="options">
@@ -130,6 +245,7 @@ function renderQuiz() {
   app.querySelector('[data-action="back"]').addEventListener('click', () => { currentQuestion -= 1; renderQuiz(); focusQuestion(); });
   app.querySelector('[data-action="next"]')?.addEventListener('click', goForward);
   app.querySelector('[data-action="home"]').addEventListener('click', renderLanding);
+  app.querySelector('[data-action="change-team"]')?.addEventListener('click', () => { resumeQuestion = currentQuestion; renderParty(); });
 }
 
 function focusQuestion() { app.querySelector('#question-title')?.setAttribute('tabindex', '-1'); app.querySelector('#question-title')?.focus({ preventScroll: true }); }
@@ -383,7 +499,12 @@ async function downloadCard(format) {
   showToast('Card download ho gaya. Ab Status pe lagao.');
 }
 
-function startQuiz() { answers = []; currentQuestion = 0; result = null; renderQuiz(); focusQuestion(); }
+function startQuiz() { answers = []; currentQuestion = 0; result = null; resumeQuestion = null; renderParty(); }
+function beginQuestions() {
+  if (resumeQuestion !== null) { currentQuestion = resumeQuestion; resumeQuestion = null; }
+  renderQuiz();
+  focusQuestion();
+}
 function restart() { startQuiz(); }
 
 renderLanding();

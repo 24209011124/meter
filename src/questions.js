@@ -8,18 +8,23 @@
 //
 // `signature: true` marks the single answer that most clearly shows a habit. Each habit has exactly one,
 // on a different question. Signatures are used only to break ties (see scoring.js).
-// No option names or hints at any real party, leader or event.
+// The static copy never names a real party or leader. Before the quiz, the player may pick a party and leader
+// (src/parties.js); those are dropped into the {party}/{leader} placeholders at render time so the scenario feels real.
+// With no pick, the placeholders fall back to "tumhari favourite party" / "tumhare favourite leader".
+// `scene` is the illustrated header for each question; `about` says whether to show the party or leader sticker.
 
 const bilingual = [
   {
     title: ['WhatsApp University', 'WhatsApp University'],
     emoji: '📲',
+    scene: { bg: 'factChecker', main: '📱', stickers: ['🚨', '🙏', '🔁'] },
+    about: 'party',
     prompt: [
-      'Tumhari favourite side ke favour mein ek viral claim aata hai. Source missing hai. Kya karoge?',
-      'A viral claim that helps your favourite side lands in the group. There is no source. What do you do?',
+      'Family group mein {party} ke favour mein ek viral claim aata hai. Source missing hai. Kya karoge?',
+      'A viral claim that helps {party} lands in the family group. There is no source. What do you do?',
     ],
     options: [
-      { habit: 'andhbhakt', text: ['Apne leader ke baare mein hai? Toh sach hi hoga.', 'It is about my leader? Then it must be true.'] },
+      { habit: 'andhbhakt', text: ['Apni party ke baare mein hai? Toh sach hi hoga.', 'It is about my party? Then it must be true.'] },
       { habit: 'chamcha', text: ['Sach ho ya na ho, opposition ko jawab toh milna chahiye. Forward!', 'True or not, the other side deserves a reply. Forward!'] },
       { habit: 'factChecker', text: ['Pehle source aur original report dhoondhunga.', 'I will find the source and the original report first.'], signature: true },
       { habit: 'spectator', text: ['Political forward hai. Seen karke chhod do.', 'It is a political forward. Leave it on seen.'] },
@@ -28,12 +33,14 @@ const bilingual = [
   {
     title: ['Same kaam, different reaction', 'Same action, different reaction'],
     emoji: '⚖️',
+    scene: { bg: 'manifesto', main: '⚖️', stickers: ['😡', '😌', '🔄'] },
+    about: 'party',
     prompt: [
-      'Jo decision opposition ke time tumne galat bola tha, wahi ab tumhari side le leti hai. Ab?',
-      'Your side now takes the same decision you called wrong when the other side took it. Now what?',
+      'Jo decision doosri party ke time tumne galat bola tha, wahi ab {party} le leti hai. Ab?',
+      '{Party} now takes the same decision you called wrong when the other side took it. Now what?',
     ],
     options: [
-      { habit: 'andhbhakt', text: ['Mere leader ne liya hai, toh zaroor koi bada reason hoga.', 'My leader took it, so there must be a big reason.'] },
+      { habit: 'andhbhakt', text: ['{Leader} ne liya hai, toh zaroor koi bada reason hoga.', '{Leader} approved it, so there must be a big reason.'] },
       { habit: 'chamcha', text: ['Haan theek hai, par pehle unhone kya kiya tha woh bhi toh dekho!', 'Fine, but look at what they did first!'], signature: true },
       { habit: 'independent', text: ['Tab galat tha toh ab bhi galat hai. Rule sabke liye same.', 'If it was wrong then, it is wrong now. Same rule for everyone.'] },
       { habit: 'manifesto', text: ['Decision ka actual result kya nikla, wahi dekhunga.', 'I will judge it by what the decision actually delivered.'] },
@@ -42,12 +49,14 @@ const bilingual = [
   {
     title: ['Family dinner ka political test', 'The family-dinner test'],
     emoji: '🍛',
+    scene: { bg: 'spectator', main: '🍛', stickers: ['☕', '😬', '📱'] },
+    about: 'leader',
     prompt: [
-      'Family dinner pe koi credible evidence ke saath tumhare favourite leader ki galti dikhata hai. Tum?',
-      'At family dinner, someone shows credible evidence of a mistake by your favourite leader. You?',
+      'Maan lo, family dinner pe koi credible evidence ke saath {leader} ki ek galti dikhata hai. Tum?',
+      'Imagine someone at family dinner shows credible evidence of a mistake by {leader}. You?',
     ],
     options: [
-      { habit: 'andhbhakt', text: ['Ye sab propaganda hai. Mera leader aisa kar hi nahi sakta.', 'This is propaganda. My leader would never do that.'], signature: true },
+      { habit: 'andhbhakt', text: ['Ye sab propaganda hai. {Leader} aisa kar hi nahi sakte.', 'This is propaganda. {Leader} would never do that.'], signature: true },
       { habit: 'chamcha', text: ['Achha? Aur tumhare leader ne jo kiya, uska kya?', 'Really? And what about what your leader did?'] },
       { habit: 'independent', text: ['Evidence sahi hai toh maanunga. Awkward hai, par galat toh galat hai.', 'If the evidence holds, I will accept it. Awkward, but wrong is wrong.'] },
       { habit: 'spectator', text: ['Politics chhodo yaar, samosa thanda ho raha hai.', 'Forget politics, yaar. The samosas are getting cold.'] },
@@ -56,12 +65,14 @@ const bilingual = [
   {
     title: ['Manifesto ya marketing?', 'Manifesto or marketing?'],
     emoji: '🎤',
+    scene: { bg: 'chamcha', main: '🎤', stickers: ['📜', '⏳', '✅'] },
+    about: 'leader',
     prompt: [
-      'Election mein tumhare area ke liye paanch bade promises kiye gaye. Tumhara next move?',
-      'Five big promises are made for your area during the election. Your next move?',
+      'Election rally mein {leader} tumhare area ke liye paanch bade promises karte hain. Tumhara next move?',
+      'At an election rally, {leader} makes five big promises for your area. Your next move?',
     ],
     options: [
-      { habit: 'andhbhakt', text: ['Leader ne bola hai, toh ho hi jaayega. Tension kya hai?', 'The leader said it, so it will happen. Why worry?'] },
+      { habit: 'andhbhakt', text: ['{Leader} ne bola hai, toh ho hi jaayega. Tension kya hai?', '{Leader} said it, so it will happen. Why worry?'] },
       { habit: 'manifesto', text: ['Promises aur deadlines note karta hoon. Baad mein hisaab hoga.', 'I note the promises and deadlines. We will settle accounts later.'], signature: true },
       { habit: 'factChecker', text: ['Pehle check karunga ki paisa aur plan kahan se aayega.', 'First I check where the money and the plan will come from.'] },
       { habit: 'spectator', text: ['Har election mein yahi hota hai. Main kyun dimaag lagaun?', 'This happens every election. Why should I bother?'] },
@@ -70,9 +81,11 @@ const bilingual = [
   {
     title: ['Debate ka asli winner', 'Who really won the debate?'],
     emoji: '📺',
+    scene: { bg: 'andhbhakt', main: '📺', stickers: ['🎙️', '🗣️', '🍿'] },
+    about: 'party',
     prompt: [
-      'TV debate mein tumhari side ka spokesperson seedha jawab nahi deta. Opponent bhi beech mein interrupt kar raha hai. Tum?',
-      'On a TV debate, your side’s spokesperson dodges the question. The opponent keeps interrupting too. You?',
+      'TV debate mein {party} ka spokesperson seedha jawab nahi deta. Opponent bhi beech mein interrupt kar raha hai. Tum?',
+      'On a TV debate, a spokesperson from {party} dodges the question. The opponent keeps interrupting too. You?',
     ],
     options: [
       { habit: 'chamcha', text: ['Asli issue toh opponent ki badtameezi hai. Jawab ki kya zaroorat?', 'The real issue is the opponent’s rudeness. Who needs an answer?'] },
@@ -84,12 +97,14 @@ const bilingual = [
   {
     title: ['Election haar gaye', 'We lost the election'],
     emoji: '🗳️',
+    scene: { bg: 'independent', main: '🗳️', stickers: ['📉', '😤', '🤔'] },
+    about: 'party',
     prompt: [
-      'Tumhari preferred party election haar gayi. Group chat mein tumhara message?',
-      'Your preferred party lost the election. Your message in the group chat?',
+      'Maan lo, {party} election haar gayi. Group chat mein tumhara message?',
+      'Imagine {party} loses the election. Your message in the group chat?',
     ],
     options: [
-      { habit: 'andhbhakt', text: ['Kuch toh gadbad hui hai. Mera leader aise haar hi nahi sakta.', 'Something is fishy. My leader cannot lose like this.'] },
+      { habit: 'andhbhakt', text: ['Kuch toh gadbad hui hai. {Leader} aise haar hi nahi sakte.', 'Something is fishy. {Leader} cannot lose like this.'] },
       { habit: 'factChecker', text: ['Gadbad ke forwards aayenge. Main pehle evidence maangunga.', '“It was rigged” forwards will come. I will ask for evidence first.'] },
       { habit: 'independent', text: ['Humari side ne bhi galtiyan ki. Voters ka message samajhna padega.', 'Our side made mistakes too. We need to hear what voters said.'] },
       { habit: 'manifesto', text: ['Ab jeetne walon ke promises track karenge. Clock shuru.', 'Now we track the winners’ promises. The clock starts today.'] },
@@ -98,6 +113,8 @@ const bilingual = [
   {
     title: ['Opposition ko credit?', 'Credit to the other side?'],
     emoji: '😶',
+    scene: { bg: 'factChecker', main: '🤝', stickers: ['👏', '😶', '🏆'] },
+    about: null,
     prompt: [
       'Doosri party ek genuinely achha kaam karti hai, jiska tumhe bhi fayda hota hai. Tum?',
       'The other party does something genuinely good that benefits you too. You?',
@@ -114,6 +131,8 @@ const bilingual = [
 const pick = (lang) => bilingual.map((question) => ({
   title: question.title[lang],
   emoji: question.emoji,
+  scene: question.scene,
+  about: question.about,
   prompt: question.prompt[lang],
   options: question.options.map((option) => ({ habit: option.habit, text: option.text[lang], signature: Boolean(option.signature) })),
 }));

@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { englishQuestions, questions } from '../src/questions.js?v=2026-10-15';
-import { archetypes, chances, countHabits, getResult } from '../src/scoring.js?v=2026-10-15';
+import { englishQuestions, questions } from '../src/questions.js?v=2026-10-16';
+import { archetypes, chances, countHabits, getResult } from '../src/scoring.js?v=2026-10-16';
+import { fillTokens, findParty, parties, personalWords } from '../src/parties.js?v=2026-10-16';
 
 const habits = Object.keys(archetypes);
 const allAnswerSets = function* () {
@@ -77,7 +78,7 @@ for (const archetype of Object.values(archetypes)) {
 }
 
 // ---- Cache versioning: every ?v= tag in the site must match ----
-const files = ['index.html', 'about.html', 'privacy.html', 'terms.html', 'contact.html', 'src/app.js', 'src/scoring.js', 'tests/scoring.test.js'];
+const files = ['index.html', 'about.html', 'privacy.html', 'terms.html', 'contact.html', 'src/app.js', 'src/scoring.js', 'src/parties.js', 'tests/scoring.test.js'];
 const versions = new Set(files.flatMap((file) => [...readFileSync(new URL(`../${file}`, import.meta.url), 'utf8').matchAll(/\?v=([\w.-]+)/g)].map((m) => m[1])));
 assert.equal(versions.size, 1, `All ?v= tags must match, found: ${[...versions].join(', ')}`);
 
@@ -86,6 +87,43 @@ const app = readFileSync(new URL('../src/app.js', import.meta.url), 'utf8');
 const index = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 assert.ok(app.includes("SITE_URL = 'https://andhbhaktyachamcha.in'"));
 assert.ok(!/github\.io/.test(app + index), 'No github.io links in the app or page head');
+
+// ---- Party preference: personalises wording only ----
+assert.ok(parties.length >= 15, 'Major parties listed');
+assert.equal(new Set(parties.map((p) => p.id)).size, parties.length, 'Unique party ids');
+parties.forEach((p) => { assert.ok(p.short && p.name); assert.ok(p.leaders.length <= 3); });
+const allQuestionText = (list) => list.flatMap((q) => [q.prompt, ...q.options.map((o) => o.text)]);
+const tokenPattern = /\{(party|Party|leader|Leader)\}/;
+// Every placeholder resolves, for every party/leader choice and with no choice, in both languages.
+const preferences = [null, { partyId: 'secret' }, { partyId: 'nota' }, { partyId: 'other' }, ...parties.flatMap((p) => [{ partyId: p.id, leader: null }, ...p.leaders.map((leader) => ({ partyId: p.id, leader }))])];
+for (const [lang, list] of [[0, questions], [1, englishQuestions]]) {
+  for (const preference of preferences) {
+    const words = personalWords(preference, lang);
+    for (const text of allQuestionText(list)) {
+      const filled = fillTokens(text, words);
+      assert.ok(!/[{}]/.test(filled), `Unfilled placeholder: ${filled}`);
+    }
+  }
+}
+// Placeholders are actually used, so the picker matters.
+assert.ok(allQuestionText(questions).some((text) => tokenPattern.test(text)));
+// Generic fallback wording reads naturally.
+assert.equal(fillTokens('{Leader} ne bola hai', personalWords(null, 0)), 'Tumhare favourite leader ne bola hai');
+assert.equal(fillTokens('{party} haar gayi', personalWords({ partyId: 'bjp', leader: null }, 0)), 'BJP haar gayi');
+assert.equal(fillTokens('{leader} ki galti', personalWords({ partyId: 'inc', leader: 'Rahul Gandhi' }, 0)), 'Rahul Gandhi ki galti');
+// A leader from another party is ignored only if the party is missing.
+assert.equal(personalWords({ partyId: 'nota', leader: 'X' }, 0).leader, 'tumhare favourite leader');
+assert.equal(findParty('nope'), null);
+// Results and share copy never mention any listed party or leader.
+const resultCopy = JSON.stringify(archetypes);
+for (const p of parties) {
+  for (const word of [p.short, p.name, ...p.leaders]) assert.ok(!resultCopy.includes(word), `Result copy mentions ${word}`);
+}
+// The app never writes the preference to storage, the URL or analytics.
+const appSource = readFileSync(new URL('../src/app.js', import.meta.url), 'utf8');
+for (const forbidden of ['localStorage', 'sessionStorage', 'gtag(', 'dataLayer', 'history.pushState', 'location.hash', 'document.cookie']) {
+  assert.ok(!appSource.includes(forbidden), `app.js must not use ${forbidden}`);
+}
 
 assert.throws(() => countHabits([]), /complete set/);
 assert.throws(() => countHabits(Array(7).fill(4)), /complete set/);
