@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { englishQuestions, questions } from '../src/questions.js?v=2026-10-22';
-import { archetypes, chances, countHabits, getResult } from '../src/scoring.js?v=2026-10-22';
-import { cleanName, fillTokens, findParty, parties, personalWords } from '../src/parties.js?v=2026-10-22';
-import { SHARE_REAL_PARTIES, cardKicker, personalResult, shareFlavour } from '../src/personal.js?v=2026-10-22';
-import { SLICE_ORDER, percentages } from '../src/stats.js?v=2026-10-22';
+import { englishQuestions, questions } from '../src/questions.js?v=2026-10-23';
+import { archetypes, chances, countHabits, getResult } from '../src/scoring.js?v=2026-10-23';
+import { cleanName, fillTokens, findParty, parties, personalWords } from '../src/parties.js?v=2026-10-23';
+import { SHARE_REAL_PARTIES, cardKicker, personalResult, shareFlavour } from '../src/personal.js?v=2026-10-23';
+import { SLICE_ORDER, percentages } from '../src/stats.js?v=2026-10-23';
 
 const habits = Object.keys(archetypes);
 const allAnswerSets = function* () {
