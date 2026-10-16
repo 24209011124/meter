@@ -12,8 +12,10 @@ const BASE = 'https://abacus.jasoncameron.dev';
 const NAMESPACE = 'andhbhaktyachamcha.in';
 const TIMEOUT_MS = 4000;
 
-// Show the chart only after this many real results. Counts are all-time (since the counter started).
-export const MIN_TOTAL_FOR_CHART = 10;
+// Show the chart only after this many recorded results, so a handful of plays (including the owner's own
+// test runs) can't make a misleading pie. Below this the home page shows a "warm-up" note instead.
+// Counts are all-time finished quizzes, not unique people.
+export const MIN_TOTAL_FOR_CHART = 50;
 
 // Fixed slice order (never sorted by size): chosen so neighbouring colours stay distinguishable,
 // including for colour-blind readers, on the dark chart panel.

@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { englishQuestions, questions } from '../src/questions.js?v=2026-10-23';
-import { archetypes, chances, countHabits, getResult } from '../src/scoring.js?v=2026-10-23';
-import { cleanName, fillTokens, findParty, parties, personalWords } from '../src/parties.js?v=2026-10-23';
-import { SHARE_REAL_PARTIES, cardKicker, personalResult, shareFlavour } from '../src/personal.js?v=2026-10-23';
-import { SLICE_ORDER, percentages } from '../src/stats.js?v=2026-10-23';
+import { createHash } from 'node:crypto';
+import { englishQuestions, questions } from '../src/questions.js?v=2026-10-24';
+import { archetypes, chances, countHabits, getResult } from '../src/scoring.js?v=2026-10-24';
+import { cleanName, fillTokens, findParty, parties, personalWords } from '../src/parties.js?v=2026-10-24';
+import { SHARE_REAL_PARTIES, cardKicker, personalResult, shareFlavour } from '../src/personal.js?v=2026-10-24';
+import { MIN_TOTAL_FOR_CHART, SLICE_ORDER, percentages } from '../src/stats.js?v=2026-10-24';
+import { EVENTS, campaignUrl, cleanEvent } from '../src/analytics.js?v=2026-10-24';
 
 const habits = Object.keys(archetypes);
 const allAnswerSets = function* () {
@@ -65,6 +67,10 @@ assert.equal(tie.archetype.id, 'andhbhakt');
 const tally = Object.fromEntries(habits.map((habit) => [habit, 0]));
 let total = 0;
 for (const answers of allAnswerSets()) { tally[getResult(answers).archetype.id] += 1; total += 1; }
+// Frozen fingerprint of the result for all 16,384 answer sets. If this fails, scoring behaviour changed.
+// Only update the value on purpose, after deciding to change how results are calculated.
+const fingerprint = createHash('sha256').update([...allAnswerSets()].map((answers) => getResult(answers).archetype.id).join(',')).digest('hex').slice(0, 16);
+assert.equal(fingerprint, '28b87443a9263ce7', 'Scoring results changed for some answer sets');
 for (const habit of habits) {
   const share = tally[habit] / total;
   assert.ok(share >= 0.12 && share <= 0.22, `${habit} gets ${(share * 100).toFixed(1)}% of random answer sets`);
@@ -80,7 +86,7 @@ for (const archetype of Object.values(archetypes)) {
 }
 
 // ---- Cache versioning: every ?v= tag in the site must match ----
-const files = ['index.html', 'about.html', 'privacy.html', 'terms.html', 'contact.html', 'src/app.js', 'src/scoring.js', 'src/parties.js', 'src/personal.js', 'src/stats.js', 'tests/scoring.test.js'];
+const files = ['index.html', 'about.html', 'privacy.html', 'terms.html', 'contact.html', 'src/app.js', 'src/scoring.js', 'src/parties.js', 'src/personal.js', 'src/stats.js', 'src/analytics.js', 'src/nav.js', 'tests/scoring.test.js'];
 const versions = new Set(files.flatMap((file) => [...readFileSync(new URL(`../${file}`, import.meta.url), 'utf8').matchAll(/\?v=([\w.-]+)/g)].map((m) => m[1])));
 assert.equal(versions.size, 1, `All ?v= tags must match, found: ${[...versions].join(', ')}`);
 
@@ -133,15 +139,45 @@ const appSource = readFileSync(new URL('../src/app.js', import.meta.url), 'utf8'
 for (const forbidden of ['localStorage', 'sessionStorage', 'dataLayer', 'history.pushState', 'location.hash', 'document.cookie']) {
   assert.ok(!appSource.includes(forbidden), `app.js must not use ${forbidden}`);
 }
-// Analytics: exactly one gtag call (inside track), and track() only ever sends whitelisted, non-political data.
-assert.equal(appSource.split('gtag?.(').length - 1, 1, 'gtag only inside track()');
-const trackCalls = [...appSource.matchAll(/track\(([^;]*?)\)(?:;|\)|\s)/g)].map((m) => m[1]).filter((args) => !args.startsWith('name'));
+// Analytics: exactly one gtag call in the whole app (inside analytics.js track()), never in app.js.
+const analyticsSource = readFileSync(new URL('../src/analytics.js', import.meta.url), 'utf8');
+assert.equal(appSource.split('gtag').length - 1, 0, 'app.js must not call gtag directly');
+assert.equal(analyticsSource.split('gtag?.(').length - 1, 1, 'gtag only inside track()');
+const trackCalls = [...appSource.matchAll(/track(?:Once)?\(([^;]*?)\)(?:;|\)|\s)/g)].map((m) => m[1]).filter((args) => !args.startsWith('name') && !args.startsWith('key'));
 for (const args of trackCalls) {
   for (const word of ['preference', 'answers', 'archetype', 'leader', 'party.', 'custom.', 'counts', 'result.']) {
     assert.ok(!args.includes(word), `track() must not send ${word}: track(${args})`);
   }
 }
-assert.ok(trackCalls.length >= 6, 'Counting is wired up');
+assert.ok(trackCalls.length >= 10, 'Counting is wired up');
+// The whitelist itself: only fixed words or question numbers, never free text.
+for (const [name, params] of Object.entries(EVENTS)) {
+  for (const values of Object.values(params)) values.forEach((value) => assert.ok(typeof value === 'number' || /^[a-z_]+$/.test(value), `${name}: odd value ${value}`));
+}
+assert.equal(cleanEvent('page_secret', {}), null, 'Unknown events are dropped');
+assert.deepEqual(cleanEvent('team_pick', { path: 'listed', party: 'BJP', team: 'bjp' }), { path: 'listed' }, 'Extra params are dropped');
+assert.deepEqual(cleanEvent('team_pick', { path: 'BJP' }), {}, 'Unlisted values are dropped');
+assert.deepEqual(cleanEvent('quiz_progress', { question_number: 3, answer: 2 }), { question_number: 3 });
+assert.deepEqual(cleanEvent('quiz_progress', { question_number: 9 }), {});
+assert.deepEqual(cleanEvent('share', { method: 'whatsapp' }), {}, 'A tap on wa.me is never counted as a confirmed share');
+assert.deepEqual(cleanEvent('quiz_complete', { result: 'chamcha' }), {}, 'Result type never reaches analytics');
+for (const p of parties) for (const word of [p.id, p.short, ...p.leaders]) assert.ok(!JSON.stringify(EVENTS).includes(`"${word}"`), `Analytics whitelist mentions ${word}`);
+// Campaign links: fixed tags only, nothing else can be added.
+assert.equal(campaignUrl('https://andhbhaktyachamcha.in', 'whatsapp', 'quiz_challenge'), 'https://andhbhaktyachamcha.in/?utm_source=whatsapp&utm_medium=social&utm_campaign=quiz_challenge');
+assert.equal(campaignUrl('https://andhbhaktyachamcha.in', 'Pratik', 'quiz_challenge'), 'https://andhbhaktyachamcha.in', 'Unknown sources are ignored');
+assert.ok(!/campaignUrl\([^)]*(preference|answers|leader|custom|archetype)/.test(appSource), 'Campaign links never use quiz data');
+// Browser history: only screen names, never data, and the address never changes.
+const navSource = readFileSync(new URL('../src/nav.js', import.meta.url), 'utf8');
+assert.equal(navSource.match(/history\.pushState\(/g).length, 1);
+assert.ok(/history\.pushState\(\{ screen \}, ''\)/.test(navSource), 'pushState stores only the screen name, no URL');
+assert.ok(/history\.replaceState\(\{ screen \}, ''\)/.test(navSource), 'replaceState stores only the screen name, no URL');
+assert.ok(!/location|localStorage|sessionStorage/.test(navSource.replace(/\/\/.*$/gm, '')));
+assert.ok(!/history\.(push|replace)State/.test(appSource), 'app.js changes history only through nav.js');
+const { SCREEN_PATTERN } = await import('../src/nav.js?v=2026-10-24');
+for (const ok of ['landing', 'party', 'leader', 'custom', 'quiz-0', 'quiz-6', 'result']) assert.ok(SCREEN_PATTERN.test(ok));
+for (const bad of ['quiz-7', 'bjp', 'party-bjp', 'result-chamcha', '']) assert.ok(!SCREEN_PATTERN.test(bad), `Screen "${bad}" must be rejected`);
+// Share wording never claims a save or share that the browser didn't confirm.
+assert.ok(!/save ho gayi|Image saved/i.test(appSource), 'No "image saved" claims');
 
 // ---- Personalised results ----
 for (const id of Object.keys(archetypes)) {
@@ -170,6 +206,7 @@ assert.ok(shareFlavour(custom, 0).includes('supreme leader: Pratik'));
 
 // ---- Public result-type counter ----
 assert.deepEqual([...SLICE_ORDER].sort(), [...habits].sort(), 'Chart covers every result type');
+assert.ok(MIN_TOTAL_FOR_CHART >= 50, 'Chart stays hidden until at least 50 results');
 assert.deepEqual(percentages({ andhbhakt: 1, chamcha: 1, independent: 2, spectator: 0, factChecker: 0, manifesto: 0 }, 4).independent, 50);
 assert.equal(percentages(Object.fromEntries(habits.map((h) => [h, 0])), 0).chamcha, 0);
 const statsSource = readFileSync(new URL('../src/stats.js', import.meta.url), 'utf8');

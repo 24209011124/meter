@@ -1,10 +1,12 @@
 // When you change any file under src/, bump the ?v= value here, in scoring.js and in index.html
 // (tests/scoring.test.js checks they all match) so returning visitors never mix old and new files.
-import { englishQuestions, questions } from './questions.js?v=2026-10-23';
-import { archetypes, chances, getResult, rankHabits } from './scoring.js?v=2026-10-23';
-import { cardKicker, personalResult, shareFlavour } from './personal.js?v=2026-10-23';
-import { MIN_TOTAL_FOR_CHART, SLICE_ORDER, fetchStats, percentages, recordResult } from './stats.js?v=2026-10-23';
-import { CUSTOM_NAME_MAX, cleanName, customSymbols, fillTokens, findParty, initials, neutralChoices, parties, personalWords } from './parties.js?v=2026-10-23';
+import { englishQuestions, questions } from './questions.js?v=2026-10-24';
+import { archetypes, chances, getResult, rankHabits } from './scoring.js?v=2026-10-24';
+import { cardKicker, personalResult, shareFlavour } from './personal.js?v=2026-10-24';
+import { MIN_TOTAL_FOR_CHART, SLICE_ORDER, fetchStats, percentages, recordResult } from './stats.js?v=2026-10-24';
+import { CUSTOM_NAME_MAX, cleanName, customSymbols, fillTokens, findParty, initials, neutralChoices, parties, personalWords } from './parties.js?v=2026-10-24';
+import { campaignUrl, track } from './analytics.js?v=2026-10-24';
+import { onScreenChange, pushScreen, replaceScreen } from './nav.js?v=2026-10-24';
 
 // Public address used in share messages and on result cards.
 const SITE_URL = 'https://andhbhaktyachamcha.in';
@@ -20,15 +22,17 @@ const colours = {
   andhbhakt: '#ff7eb6', chamcha: '#ffc531', factChecker: '#3fd6b4', spectator: '#ff8a5c', manifesto: '#b9a3ff', independent: '#6fd3ff',
 };
 
-// Privacy-safe counting through the Google Analytics tag already on the page.
-// ONLY these event names, and never answers, results, party or leader. tests/scoring.test.js enforces this.
-const TRACKED_EVENTS = ['quiz_start', 'team_pick', 'quiz_complete', 'share', 'instagram_click'];
-function track(name, params = {}) {
-  if (!TRACKED_EVENTS.includes(name)) return;
-  try { window.gtag?.('event', name, params); } catch { /* analytics blocked or not loaded */ }
-}
+// Analytics goes through track() in src/analytics.js, which only lets through a fixed list of
+// events and values (never answers, results, party, leader or names).
 
 const app = document.querySelector('#app');
+// Per quiz run, so Back/Forward or a replay inside one run never double-counts.
+let runEvents = new Set();
+const trackOnce = (key, name, params) => { if (runEvents.has(key)) return; runEvents.add(key); track(name, params); };
+// True while a popstate (Back/Forward) is being handled, so renders don't add new history entries.
+let fromHistory = false;
+// True once the player has tapped a start button in this page visit (answers etc. live in memory).
+let quizActive = false;
 let answers = [];
 let currentQuestion = 0;
 let result = null;
@@ -85,65 +89,99 @@ headerSwitch.addEventListener('click', (event) => {
 
 function bindLanguageToggle() { /* language switching now lives in the header (renderChrome) */ }
 
-function setPage(name) {
+function setPage(name, screen = name) {
+  const sameScreen = history.state?.screen === screen;
   view = name;
   document.body.classList.toggle('is-landing', name === 'landing');
-  window.scrollTo({ top: 0 });
+  if (!fromHistory) pushScreen(screen);
+  if (!sameScreen) window.scrollTo({ top: 0 });
 }
+
+// Back / Forward: show the step the history entry names, using what is still in memory.
+// If memory doesn't have what that step needs (e.g. after a refresh), fall back safely.
+onScreenChange((screen) => {
+  fromHistory = true;
+  try {
+    advancing = false;
+    const quizReady = quizActive;
+    if (screen === 'landing') renderLanding();
+    else if (screen === 'party' && quizReady) renderParty();
+    else if (screen === 'custom' && quizReady) renderCustomParty();
+    else if (screen === 'leader' && quizReady && chosenParty()?.leaders?.length) renderLeader();
+    else if (screen === 'leader' && quizReady) renderParty();
+    else if (screen.startsWith('quiz-') && quizReady) {
+      currentQuestion = Math.min(Number(screen.slice(5)), answers.length, questions.length - 1);
+      renderQuiz(); focusQuestion();
+    } else if (screen === 'result' && quizReady && result && answers.length === questions.length) renderResult();
+    else if (screen === 'result' && quizReady) { currentQuestion = Math.min(answers.length, questions.length - 1); renderQuiz(); }
+    else renderLanding();
+  } finally {
+    fromHistory = false;
+  }
+  // Keep the entry and what is shown in step (the fallbacks above may show a different step).
+  replaceScreen(currentScreen());
+});
+
+function currentScreen() { return view === 'quiz' ? `quiz-${currentQuestion}` : view; }
 
 function renderLanding() {
   setPage('landing');
-  const fan = ['andhbhakt', 'chamcha', 'factChecker'].map((id) => archetypes[id]);
+  // Answers the three first-screen questions: what is this (headline + hook), why take it (7 / 2 / 6 facts,
+  // trust line), and what happens after (the six-result board and "share it" line).
   app.innerHTML = `
     <div class="landing">
       <section class="hero-band">
         <div class="hero page-width">
-          <div>
+          <div class="hero-main">
             <h1><span>Andhbhakt Ya</span><span>Chamcha?</span></h1>
-            <p class="hero-lede">${t('Har group chat mein ek Andhbhakt hota hai, ek Chamcha. Kahin woh tum toh nahi? 👀', 'Every group chat has one Andhbhakt and one Chamcha. Is it you? 👀')}</p>
-            <button class="button button-primary button-big" data-action="start">${t('Pata karo 👀', 'Find out 👀')}</button>
-            <p class="oath"><span aria-hidden="true">🤚</span> <em>"Jo kahunga sach kahunga, sach ke siwa kuch nahi kahunga."</em><small>${t('Haath dil pe, phone haath mein. 📱😂', 'Hand on heart, phone in hand. 📱😂')}</small></p>
-            <p class="hero-note">${t('2 minute. Koi login nahi. Kuch save nahi hota.', '2 minutes. No login. Nothing is saved.')}</p>
+            <p class="hero-lede">${t('Har group chat mein ek Andhbhakt hota hai, ek Chamcha. Tum kaun ho?&nbsp;👀', 'Every group chat has one Andhbhakt and one Chamcha. Which one are you?&nbsp;👀')}</p>
+            <ul class="hero-facts" aria-label="${t('Quiz ke baare mein', 'About the quiz')}">
+              <li><strong>7</strong> ${t('sawaal', 'questions')}</li>
+              <li><strong>2</strong> ${t('minute', 'minutes')}</li>
+              <li><strong>6</strong> ${t('possible results', 'possible results')}</li>
+            </ul>
+            <button class="button button-primary button-big" data-action="start" data-cta="hero">${t('Pata karo 👀', 'Find out 👀')}</button>
+            <p class="hero-trust"><span aria-hidden="true">🤝</span> ${t('Party nahi, aadat pakadta hai. Koi login nahi. Party batana zaroori nahi.', 'It reads habits, not parties. No login. Naming a party is optional.')}</p>
           </div>
-          <div class="ticket-stack" aria-hidden="true">
-            ${fan.map(loc).map((a) => `<div class="ticket c-${a.id}"><div class="ticket-emoji">${a.emoji}</div><h3>${shortTitle(a)}</h3><p>${a.subtitle}</p></div>`).join('')}
-            <div class="stamp">${t('Tumhara<br>result?', 'Your<br>result?')}</div>
+          <div class="result-board">
+            <p class="board-title">${t('In 6 mein se ek result milega. Card bana ke share karo 📲', 'You get one of these 6. Share it as a card 📲')}</p>
+            <ul class="board-grid">
+              ${Object.values(archetypes).map(loc).map((a) => `<li class="board-tile c-${a.id}"><span class="board-emoji" aria-hidden="true">${a.emoji}</span><span class="board-name">${shortTitle(a)}</span><span class="board-sub">${a.subtitle}</span></li>`).join('')}
+            </ul>
+            <div class="stamp" aria-hidden="true">${t('Tumhara<br>result?', 'Your<br>result?')}</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="friend-teaser page-width" aria-labelledby="teaser-title">
+        <div class="teaser-card">
+          <div class="teaser-crown" aria-hidden="true">👑</div>
+          <div>
+            <h2 id="teaser-title">${t('Dost ko Supreme Leader banao', 'Make your friend the Supreme Leader')}</h2>
+            <p>${t('Apne dost ko party ka Supreme Leader banao. Phir dekho tum uske Andhbhakt nikle ya Chamcha 😂', 'Make a friend the Supreme Leader of your own party. Then see if you turn out to be their Andhbhakt or their Chamcha 😂')}</p>
+            <button class="text-button teaser-link" data-action="start-custom" data-cta="teaser">${t('Apni party banao →', 'Create your party →')}</button>
           </div>
         </div>
       </section>
 
       <section class="scene-stats page-width" aria-labelledby="stats-title" data-stats hidden></section>
 
-      <section class="steps page-width" aria-labelledby="steps-title">
-        <h2 id="steps-title">${t('Khelna simple hai', 'How it works')}</h2>
-        <ol>
-          <li><strong>${t('Party chuno, ya apni bana lo', 'Pick a party, or make your own')}</strong><p>${t('Dost ko supreme leader bana do. Koi rok nahi raha. 😄', 'Make your friend the supreme leader. Nobody is stopping you. 😄')}</p></li>
-          <li><strong>${t('7 sawaal, sach sach', '7 questions, be honest')}</strong><p>${t('Family WhatsApp se lekar TV debate tak.', 'From family WhatsApp to TV debates.')}</p></li>
-          <li><strong>${t('Result dost ko bhejo', 'Send your result')}</strong><p>${t('Phir dekho kaun appeal karta hai. 😂', 'Then see who files an appeal. 😂')}</p></li>
-        </ol>
-      </section>
-
-      <section class="results-intro page-width" aria-labelledby="results-title">
-        <h2 id="results-title">${t('6 type ke log. Tum kaunse?', '6 kinds of people. Which one are you?')}</h2>
-        <p>${t('Har group chat mein milte hain.', 'You will find them in every group chat.')}</p>
-        <div class="result-tiles">
-          ${Object.values(archetypes).map(loc).map((a) => `<article class="result-tile c-${a.id}"><div class="tile-emoji" aria-hidden="true">${a.emoji}</div><div><h3>${shortTitle(a)}</h3><p>${a.subtitle}</p></div></article>`).join('')}
-        </div>
-        <div class="habit-note">
-          <div class="note-emoji" aria-hidden="true">🤝</div>
-          <div><strong>${t('Party nahi, aadat.', 'Habits, not parties.')}</strong><p>${t('Andhbhakt aur Chamcha kisi bhi party mein mil jaate hain. Quiz aadat pakadta hai, party nahi.', 'Andhbhakts and Chamchas exist in every party. The quiz looks at habits, not parties.')}</p></div>
-        </div>
-      </section>
-
       <section class="landing-cta page-width">
         <h2>${t('Toh ho jaaye?', 'Shall we?')}</h2>
-        <button class="button button-primary button-big" data-action="start">${t('Quiz shuru karo', 'Start the quiz')}</button>
+        <p class="oath"><span aria-hidden="true">🤚</span> <em>"Jo kahunga sach kahunga, sach ke siwa kuch nahi kahunga."</em><small>${t('Haath dil pe, phone haath mein. 📱😂', 'Hand on heart, phone in hand. 📱😂')}</small></p>
+        <button class="button button-primary button-big" data-action="start" data-cta="bottom">${t('Quiz shuru karo', 'Start the quiz')}</button>
+        <p class="landing-small">${t('Andhbhakt aur Chamcha har party mein milte hain. Kuch save nahi hota.', 'Andhbhakts and Chamchas exist in every party. Nothing is saved.')}</p>
       </section>
     </div>
   `;
   bindLanguageToggle();
-  app.querySelectorAll('[data-action="start"]').forEach((button) => button.addEventListener('click', startQuiz));
+  bindStartButtons(app);
   loadLandingStats();
+}
+
+function bindStartButtons(root) {
+  root.querySelectorAll('[data-action="start"]').forEach((button) => button.addEventListener('click', () => { track('cta_click', { cta_location: button.dataset.cta }); startQuiz(); }));
+  root.querySelector('[data-action="start-custom"]')?.addEventListener('click', (event) => { track('cta_click', { cta_location: event.currentTarget.dataset.cta }); startQuiz({ custom: true }); });
 }
 
 
@@ -155,25 +193,29 @@ const privacyLine = () => t(
 function renderParty() {
   setPage('party');
   const current = preference?.partyId;
+  // Order matters: the one-tap skip comes first, then the fun custom party, then the compact real-party list.
   app.innerHTML = `
     <section class="pick-shell page-width" aria-labelledby="pick-title">
       <div class="quiz-top"><span>${t('Shuru karne se pehle', 'Before we start')}</span><button class="text-button" data-action="home">${t('Band karo', 'Exit')}</button></div>
+      <div class="fast-track">
+        <button class="button button-primary button-big" data-action="skip-party">${t('Seedha quiz shuru karo →', 'Start the quiz now →')}</button>
+        <p>${t('Party choose karna optional hai.', 'Picking a party is optional.')}</p>
+      </div>
+      <p class="pick-or"><span>${t('ya mazaa double karo', 'or make it personal')}</span></p>
+      <button class="party-card custom-card ${current === 'custom' ? 'selected' : ''}" data-action="custom-party">
+        <span class="party-symbol" aria-hidden="true">${current === 'custom' ? escapeHtml(preference.custom.symbol) : '👑'}</span>
+        <span class="party-short">${current === 'custom' ? escapeHtml(preference.custom.party) : t('Apni party banao', 'Create your own party')}</span>
+        <span class="party-name">${t('Dost ko Supreme Leader banao: tum, dost, mummy, koi bhi 😄', 'Make anyone Supreme Leader: you, a friend, your mom 😄')}</span>
+      </button>
       <div class="pick-head">
-        <div class="pick-emoji" aria-hidden="true">🗳️</div>
-        <h1 id="pick-title">${t('Aaj chunaav ho, toh vote kisko doge?', 'If the election were today, who gets your vote?')}</h1>
+        <h1 id="pick-title">${t('Ya batao: aaj chunaav ho, toh vote kisko doge?', 'Or tell us: if the election were today, who gets your vote?')}</h1>
         <p class="pick-note"><span aria-hidden="true">🔒</span> ${privacyLine()}</p>
       </div>
-      <div class="party-grid" role="list">
-        <button class="party-card custom-card ${current === 'custom' ? 'selected' : ''}" role="listitem" data-action="custom-party">
-          <span class="party-symbol" aria-hidden="true">${current === 'custom' ? escapeHtml(preference.custom.symbol) : '➕'}</span>
-          <span class="party-short">${current === 'custom' ? escapeHtml(preference.custom.party) : t('Apni party banao', 'Create your own party')}</span>
-          <span class="party-name">${t('Leader koi bhi: tum, dost, mummy 😄', 'Any leader: you, a friend, your mom 😄')}</span>
-        </button>
+      <div class="party-chips" role="list">
         ${parties.map((party) => `
-          <button class="party-card ${current === party.id ? 'selected' : ''}" role="listitem" data-party="${party.id}" aria-pressed="${current === party.id}">
-            <span class="party-symbol ${party.symbol ? '' : 'text-symbol'}" aria-hidden="true">${party.symbol || party.short.slice(0, 3)}</span>
-            <span class="party-short">${party.short}</span>
-            <span class="party-name">${party.name}</span>
+          <button class="party-chip ${current === party.id ? 'selected' : ''}" role="listitem" data-party="${party.id}" aria-pressed="${current === party.id}" aria-label="${party.short}: ${party.name}" title="${party.name}">
+            <span class="chip-symbol ${party.symbol ? '' : 'text-symbol'}" aria-hidden="true">${party.symbol || '🗳️'}</span>
+            <span class="chip-name">${party.short}</span>
           </button>`).join('')}
       </div>
       <div class="neutral-row">
@@ -185,15 +227,20 @@ function renderParty() {
   bindLanguageToggle();
   app.querySelector('[data-action="home"]').addEventListener('click', renderLanding);
   app.querySelector('[data-action="custom-party"]').addEventListener('click', renderCustomParty);
+  app.querySelector('[data-action="skip-party"]').addEventListener('click', () => {
+    preference = null;
+    trackOnce('team_pick', 'team_pick', { path: 'skip' });
+    beginQuestions();
+  });
   app.querySelectorAll('[data-party]').forEach((button) => button.addEventListener('click', () => {
     const partyId = button.dataset.party;
-    track('team_pick', { team: findParty(partyId) ? 'real_party' : 'no_party' });
     const party = findParty(partyId);
+    trackOnce('team_pick', 'team_pick', { path: party ? 'listed' : 'skip' });
     preference = { partyId, leader: preference?.partyId === partyId ? preference.leader : null };
     if (party && party.leaders.length) renderLeader();
     else { preference.leader = null; beginQuestions(); }
   }));
-  const title = app.querySelector('#pick-title'); title.setAttribute('tabindex', '-1'); title.focus({ preventScroll: true });
+  const title = app.querySelector('#pick-title'); title.setAttribute('tabindex', '-1');
 }
 
 
@@ -235,7 +282,7 @@ function renderCustomParty() {
     const party = cleanName(app.querySelector('#custom-party').value) || t('Meri Party', 'My Party');
     const leader = cleanName(app.querySelector('#custom-leader').value);
     preference = { partyId: 'custom', leader: leader || null, custom: { party, leader, symbol } };
-    track('team_pick', { team: 'custom' });
+    trackOnce('team_pick', 'team_pick', { path: 'custom' });
     beginQuestions();
   };
   app.querySelector('[data-action="launch"]').addEventListener('click', launch);
@@ -301,7 +348,7 @@ function sceneMarkup(question) {
 }
 
 function renderQuiz() {
-  setPage('quiz');
+  setPage('quiz', `quiz-${currentQuestion}`);
   const raw = activeQuestions()[currentQuestion];
   const words = Object.fromEntries(Object.entries(personalWords(preference, L())).map(([key, value]) => [key, escapeHtml(value)]));
   const question = { ...raw, prompt: fillTokens(raw.prompt, words), options: raw.options.map((option) => ({ ...option, text: fillTokens(option.text, words) })) };
@@ -333,7 +380,11 @@ function renderQuiz() {
   `;
   bindLanguageToggle();
   app.querySelectorAll('[data-option]').forEach((button) => button.addEventListener('click', () => chooseOption(Number(button.dataset.option))));
-  app.querySelector('[data-action="back"]').addEventListener('click', () => { currentQuestion -= 1; renderQuiz(); focusQuestion(); });
+  // Same as the phone's Back button, so the in-page and browser history never disagree.
+  app.querySelector('[data-action="back"]').addEventListener('click', () => {
+    if (history.state?.screen === `quiz-${currentQuestion}` && history.length > 1) { history.back(); return; }
+    currentQuestion -= 1; renderQuiz(); focusQuestion();
+  });
   app.querySelector('[data-action="next"]')?.addEventListener('click', goForward);
   app.querySelector('[data-action="home"]').addEventListener('click', renderLanding);
   app.querySelector('[data-action="change-team"]')?.addEventListener('click', () => { resumeQuestion = currentQuestion; renderParty(); });
@@ -344,18 +395,21 @@ function focusQuestion() { app.querySelector('#question-title')?.setAttribute('t
 function chooseOption(index) {
   if (advancing) return;
   answers[currentQuestion] = index;
+  trackOnce(`answered-${currentQuestion}`, 'quiz_progress', { question_number: currentQuestion + 1 });
   app.querySelectorAll('[data-option]').forEach((button) => {
     const isSelected = Number(button.dataset.option) === index;
     button.classList.toggle('selected', isSelected);
     button.setAttribute('aria-pressed', String(isSelected));
   });
   advancing = true;
-  setTimeout(() => { advancing = false; goForward(); }, 320);
+  const answeredQuestion = currentQuestion;
+  // Short pause so the tap is visible. Skip it if Back/Forward moved away in the meantime.
+  setTimeout(() => { if (!advancing) return; advancing = false; if (view === 'quiz' && currentQuestion === answeredQuestion) goForward(); }, 320);
 }
 
 function goForward() {
   if (answers[currentQuestion] === undefined) return;
-  if (currentQuestion === questions.length - 1) { result = getResult(answers); track('quiz_complete'); renderResult(); return; }
+  if (currentQuestion === questions.length - 1) { result = getResult(answers); trackOnce('complete', 'quiz_complete'); renderResult(); return; }
   currentQuestion += 1;
   renderQuiz();
   focusQuestion();
@@ -399,7 +453,12 @@ async function loadLandingStats() {
   try { stats = await fetchStats(); } catch { return; } // service down: keep the section hidden
   if (!box.isConnected) return;
   const { counts, total } = stats;
-  if (total < MIN_TOTAL_FOR_CHART) return; // stays hidden until there is enough real data
+  if (total < MIN_TOTAL_FOR_CHART) {
+    // Too few results for honest percentages: a small note instead of a chart. No numbers shown.
+    box.innerHTML = `<p class="stats-warmup"><span aria-hidden="true">🎱</span> ${t('Public verdict abhi warm-up kar raha hai. Aur log quiz khelenge toh stats dikhenge.', 'The public verdict is still warming up. Stats appear once more people have played.')}</p>`;
+    box.hidden = false;
+    return;
+  }
   {
     const pct = percentages(counts, total);
     const top = SLICE_ORDER.reduce((best, id) => (counts[id] > counts[best] ? id : best), SLICE_ORDER[0]);
@@ -416,12 +475,12 @@ async function loadLandingStats() {
           </ul>
         </div>
         <div class="stats-foot">
-          <button class="button button-primary" data-action="start">${t('Main kahan hoon? 👀', 'Where do I fit? 👀')}</button>
-          <p>${t('Asli results, live. Scientific nahi, bas mazaak.', 'Real results, live. Not science, just fun.')}</p>
+          <button class="button button-primary" data-action="start" data-cta="stats">${t('Main kahan hoon? 👀', 'Where do I fit? 👀')}</button>
+          <p>${t('Ab tak ke saare khatam hue quiz (log nahi, quiz gine jaate hain). Survey nahi, bas mazaak.', 'All quizzes finished so far (quizzes are counted, not people). Not a survey, just fun.')}</p>
         </div>
       </div>`;
   }
-  box.querySelectorAll('[data-action="start"]').forEach((button) => button.addEventListener('click', startQuiz));
+  bindStartButtons(box);
   box.hidden = false;
 }
 
@@ -431,7 +490,7 @@ async function showResultStat(archetype) {
   try { stats = await recordResult(archetype.id); } catch { return; }
   if (!line?.isConnected || stats.total < MIN_TOTAL_FOR_CHART) return;
   const pct = percentages(stats.counts, stats.total)[archetype.id];
-  line.textContent = t(`Ab tak har 100 mein se ${pct} ${shortTitle(archetype)} nikle. Tum akele nahi ho. 😌`, `${pct}% of players so far got ${shortTitle(archetype)}. You are not alone. 😌`);
+  line.textContent = t(`Ab tak ${pct}% quiz ka result ${shortTitle(archetype)} aaya. Tum akele nahi ho. 😌`, `${pct}% of quizzes so far ended in ${shortTitle(archetype)}. You are not alone. 😌`);
   line.hidden = false;
 }
 
@@ -442,9 +501,10 @@ function renderResult() {
   const runnerUp = loc(result.runnerUp);
   const breakdown = rankHabits(counts, evidence).filter((habit) => counts[habit] > 0).map((habit) => `
     <li><span>${archetypes[habit].emoji} ${shortTitle(archetypes[habit])}</span><span class="habit-bar" aria-hidden="true"><i class="c-${habit}" style="width:${Math.round((counts[habit] / chances[habit]) * 100)}%"></i></span><span>${counts[habit]}/${chances[habit]}</span></li>`).join('');
-  const waLink = `https://wa.me/?text=${encodeURIComponent(shareText())}`;
+  const waLink = `https://wa.me/?text=${encodeURIComponent(shareText('whatsapp'))}`;
   const kicker = cardKicker(preference, L());
   const canShareImage = canShareFiles();
+  // Order = what matters most after the reveal: the card, one WhatsApp challenge, the image, the rest.
   app.innerHTML = `
     <section class="result-stage c-${archetype.id}">
       <div class="page-width">
@@ -458,13 +518,14 @@ function renderResult() {
         </article>
         <p class="result-stat" data-result-stat hidden></p>
         <div class="result-actions">
-          ${canShareImage
-            ? `<button class="button button-primary button-big" data-action="share-card">${t('Story pe lagao 📲', 'Post to Story 📲')}</button>`
-            : `<button class="button button-primary button-big" data-action="download-story">${t('Image save karo 📲', 'Save image 📲')}</button>`}
+          <a class="button button-whatsapp button-big" href="${waLink}" target="_blank" rel="noopener" data-action="whatsapp">${t('WhatsApp pe challenge karo&nbsp;😏', 'Challenge on WhatsApp&nbsp;😏')}</a>
           <div class="result-actions-row">
-            <a class="button button-whatsapp" href="${waLink}" target="_blank" rel="noopener" data-track="whatsapp">${t('WhatsApp pe bhejo', 'Send on WhatsApp')}</a>
-            <button class="button button-plain" data-action="challenge">${t('Dost ko bhejo 😏', 'Dare a friend 😏')}</button>
+            ${canShareImage
+              ? `<button class="button button-plain" data-action="share-card">${t('Story pe lagao&nbsp;📲', 'Post to Story&nbsp;📲')}</button>`
+              : `<button class="button button-plain" data-action="download-story">${t('Card download&nbsp;⬇️', 'Download card&nbsp;⬇️')}</button>`}
+            <button class="button button-plain" data-action="share-link">${navigator.share ? t('Aur kahin bhejo 🔗', 'Share elsewhere 🔗') : t('Link copy karo 🔗', 'Copy link 🔗')}</button>
           </div>
+          <a class="insta-link" href="${INSTAGRAM_URL}" target="_blank" rel="noopener noreferrer" data-action="instagram"><span aria-hidden="true">📸</span> ${t('Aise aur memes: @andhbhakt_ya_chamcha', 'More memes: @andhbhakt_ya_chamcha')}</a>
         </div>
       </div>
     </section>
@@ -487,8 +548,7 @@ function renderResult() {
       </details>
       <div class="result-links">
         <button class="text-button" data-action="restart">${t('Dobara khelo', 'Play again')}</button>
-        <a class="text-button" href="${INSTAGRAM_URL}" target="_blank" rel="noopener noreferrer" data-track="instagram">${t('Aise aur memes: Instagram', 'More memes on Instagram')}</a>
-        <span class="result-downloads">${t('Image save karo:', 'Save image:')} <button class="text-button" data-action="download-story">${t('Story size', 'Story size')}</button> <button class="text-button" data-action="download-feed">${t('Post size', 'Post size')}</button></span>
+        <span class="result-downloads">${t('Card download:', 'Download card:')} <button class="text-button" data-action="download-story">${t('Story size', 'Story size')}</button> <button class="text-button" data-action="download-feed">${t('Post size', 'Post size')}</button></span>
       </div>
       <p class="result-note">${t('Sirf mazaak ke liye. Tumhare jawaab kahin save nahi hote.', 'Just for fun. Your answers are never saved.')}</p>
     </section>
@@ -496,11 +556,13 @@ function renderResult() {
   app.querySelector('h1').focus({ preventScroll: true });
   showResultStat(archetype);
   app.querySelector('[data-action="share-card"]')?.addEventListener('click', shareCard);
-  app.querySelector('[data-action="challenge"]').addEventListener('click', shareChallenge);
-  app.querySelectorAll('[data-action="download-story"]').forEach((button) => button.addEventListener('click', () => downloadCard('story')));
-  app.querySelector('[data-action="download-feed"]').addEventListener('click', () => downloadCard('feed'));
+  app.querySelector('[data-action="share-link"]').addEventListener('click', shareLink);
+  app.querySelectorAll('[data-action="download-story"]').forEach((button) => button.addEventListener('click', () => { track('share_click', { method: 'download_story' }); downloadCard('story'); }));
+  app.querySelector('[data-action="download-feed"]').addEventListener('click', () => { track('share_click', { method: 'download_feed' }); downloadCard('feed'); });
   app.querySelector('[data-action="restart"]').addEventListener('click', restart);
-  app.querySelectorAll('[data-track]').forEach((link) => link.addEventListener('click', () => track(link.dataset.track === 'instagram' ? 'instagram_click' : 'share', link.dataset.track === 'instagram' ? {} : { method: 'whatsapp' })));
+  // A wa.me link gives no way to know if the message was actually sent, so this is only a tap.
+  app.querySelector('[data-action="whatsapp"]').addEventListener('click', () => track('share_click', { method: 'whatsapp' }));
+  app.querySelector('[data-action="instagram"]').addEventListener('click', () => track('instagram_click'));
 }
 
 function teamVerdict(archetype) {
@@ -517,20 +579,49 @@ function teamVerdict(archetype) {
       </div>`;
 }
 
-function shareText() {
+// Share links carry campaign tags (fixed words only) so Google Analytics can tell where visitors came from.
+const sharedUrl = (source, campaign) => campaignUrl(config.url, source, campaign);
+
+function shareText(source) {
   const archetype = loc(result.archetype);
   const flavour = shareFlavour(preference, L());
-  return `${flavour ? `${flavour}\n` : ''}${t('Mera result', 'My result')}: ${archetype.emoji} *${archetype.title}* 😭\n"${archetype.description}"\n\n${t('Tumhara kya aata hai?', 'What do you get?')} 👉 ${config.url}`;
+  return `${flavour ? `${flavour}\n` : ''}${t('Mera result', 'My result')}: ${archetype.emoji} *${archetype.title}* 😭\n"${archetype.description}"\n\n${t('Tumhara kya aata hai? 7 sawaal, 2 minute', 'What do you get? 7 questions, 2 minutes')} 👉 ${sharedUrl(source, 'quiz_challenge')}`;
 }
-function challengeText() { return t(`Ek quiz kar ke dekh 😏\nMera ${result.archetype.emoji} ${shortTitle(result.archetype)} aaya. Tera kya aata hai?\n👉 ${config.url}`, `Try this quiz 😏\nI got ${result.archetype.emoji} ${shortTitle(result.archetype)}. What do you get?\n👉 ${config.url}`); }
 
-async function shareOrCopy(text, copiedMessage) {
+// Opens the phone's share sheet where available, otherwise copies the message. Only a resolved share
+// or a successful copy counts as a confirmed share; cancelling counts as nothing.
+async function shareLink() {
   if (navigator.share) {
-    try { await navigator.share({ title: config.brand, text }); return; } catch (error) { if (error.name === 'AbortError') return; }
+    track('share_click', { method: 'share_sheet' });
+    try {
+      await navigator.share({ title: config.brand, text: shareText('share_sheet') });
+      track('share', { method: 'share_sheet' });
+      return;
+    } catch (error) {
+      if (error.name === 'AbortError') return;
+    }
+  } else {
+    track('share_click', { method: 'copy' });
   }
-  try { await navigator.clipboard.writeText(text); showToast(copiedMessage); } catch { showToast(t('Copy nahi ho paya. Link: ', 'Could not copy. Link: ') + displayUrl()); }
+  const text = shareText('copy_link');
+  try {
+    await navigator.clipboard.writeText(text);
+    track('share', { method: 'copy' });
+    showToast(t('Message copy ho gaya. Dost ko paste karo.', 'Message copied. Paste it to a friend.'));
+  } catch {
+    showCopyBox(text);
+  }
 }
-const shareChallenge = () => { track('share', { method: 'challenge' }); return shareOrCopy(challengeText(), t('Message copy ho gaya. Dost ko paste karo.', 'Message copied. Paste it to a friend.')); };
+
+// Last resort when neither sharing nor the clipboard works (some in-app browsers): show the text to copy by hand.
+function showCopyBox(text) {
+  openSheet(`
+    <h2>${t('Ye message copy karo', 'Copy this message')}</h2>
+    <textarea class="sheet-text" readonly rows="6">${escapeHtml(text)}</textarea>
+    <p class="sheet-help">${t('Text pe long-press karke "Copy" chuno, phir WhatsApp mein paste karo.', 'Long-press the text, choose "Copy", then paste it in WhatsApp.')}</p>`);
+  const box = document.querySelector('.sheet-text');
+  box?.focus(); box?.select();
+}
 
 function showToast(message) {
   document.querySelector('.toast')?.remove();
@@ -657,35 +748,78 @@ function canShareFiles() {
   try { return Boolean(navigator.canShare && navigator.canShare({ files: [new File([''], 'x.png', { type: 'image/png' })] })); } catch { return false; }
 }
 
+// In-app browsers (Instagram, Facebook, some others) often ignore downloads silently.
+const inAppBrowser = () => /Instagram|FBAN|FBAV|FB_IAB|Line\/|Snapchat/i.test(navigator.userAgent || '');
+const toBlob = (canvas) => new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+
 async function shareCard() {
-  track('share', { method: 'story_image' });
+  track('share_click', { method: 'story_image' });
   const canvas = await renderCard('story');
-  const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+  const blob = await toBlob(canvas);
   const file = new File([blob], cardName('story'), { type: 'image/png' });
   try {
-    await navigator.share({ files: [file], text: shareText() });
+    await navigator.share({ files: [file], text: shareText('share_sheet') });
+    track('share', { method: 'story_image' }); // the browser reported the share went through
   } catch (error) {
-    if (error.name !== 'AbortError') downloadCard('story');
+    if (error.name !== 'AbortError') showCardImage(canvas, 'story');
   }
 }
 
+// Starts a download where the browser allows it. We can't know if the file was really saved,
+// so the message only says the download started. In-app browsers get the image to long-press instead.
 async function downloadCard(format) {
   const canvas = await renderCard(format);
+  if (inAppBrowser()) { showCardImage(canvas, format); return; }
+  const blob = await toBlob(canvas);
+  if (!blob) { showCardImage(canvas, format); return; }
+  const href = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.download = cardName(format);
-  link.href = canvas.toDataURL('image/png');
+  link.href = href;
+  document.body.append(link);
   link.click();
-  track('share', { method: `download_${format}` });
-  showToast(t('Image save ho gayi. Ab Story pe lagao 📲', 'Image saved. Post it to your Story 📲'));
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(href), 60000);
+  showToast(t('Download shuru ho gaya ⬇️ Na mile toh dobara try karo.', 'Download started ⬇️ If it doesn’t show up, try again.'));
 }
 
-function startQuiz() { answers = []; currentQuestion = 0; result = null; resumeQuestion = null; track('quiz_start'); renderParty(); }
+// Shows the card as a normal image the person can long-press to save (works in in-app browsers too).
+function showCardImage(canvas, format) {
+  const src = canvas.toDataURL('image/png');
+  openSheet(`
+    <h2>${t('Image taiyaar hai 📲', 'Image ready 📲')}</h2>
+    <img class="sheet-image" src="${src}" alt="${t('Tumhara result card', 'Your result card')}">
+    <p class="sheet-help">${t('Image pe long-press karke "Save image" chuno. Na ho paye toh ye page Chrome ya Safari mein kholo.', 'Long-press the image and choose "Save image". If that doesn’t work, open this page in Chrome or Safari.')}</p>
+    <a class="button button-primary" href="${src}" download="${cardName(format)}">${t('Download try karo ⬇️', 'Try download ⬇️')}</a>`);
+}
+
+function openSheet(inner) {
+  document.querySelector('.sheet-backdrop')?.remove();
+  const backdrop = document.createElement('div');
+  backdrop.className = 'sheet-backdrop';
+  backdrop.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="${t('Share', 'Share')}"><button class="sheet-close text-button" data-action="close-sheet">${t('Band karo ✕', 'Close ✕')}</button>${inner}</div>`;
+  const close = () => { backdrop.remove(); document.removeEventListener('keydown', onKey); };
+  const onKey = (event) => { if (event.key === 'Escape') close(); };
+  backdrop.addEventListener('click', (event) => { if (event.target === backdrop || event.target.closest('[data-action="close-sheet"]')) close(); });
+  document.addEventListener('keydown', onKey);
+  document.body.append(backdrop);
+  backdrop.querySelector('.sheet-close').focus({ preventScroll: true });
+}
+
+// A new quiz run. The party/leader pick is kept on replay (it only lives in memory), answers are not.
+function startQuiz({ custom = false } = {}) {
+  answers = []; currentQuestion = 0; result = null; resumeQuestion = null; advancing = false;
+  quizActive = true; runEvents = new Set();
+  if (custom) renderCustomParty(); else renderParty();
+}
 function beginQuestions() {
-  if (resumeQuestion !== null) { currentQuestion = resumeQuestion; resumeQuestion = null; }
+  if (resumeQuestion !== null) { currentQuestion = Math.min(resumeQuestion, answers.length); resumeQuestion = null; }
+  trackOnce('quiz_start', 'quiz_start');
   renderQuiz();
   focusQuestion();
 }
 function restart() { startQuiz(); }
 
 renderChrome();
+replaceScreen('landing');
 renderLanding();

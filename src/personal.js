@@ -1,4 +1,4 @@
-import { findParty, personalWords, fillTokens } from './parties.js?v=2026-10-23';
+import { findParty, personalWords, fillTokens } from './parties.js?v=2026-10-24';
 
 // Result lines that use the party/leader picked before the quiz.
 // Every line roasts the PLAYER's habit, never the party or leader.

@@ -1,4 +1,4 @@
-import { questions } from './questions.js?v=2026-10-23';
+import { questions } from './questions.js?v=2026-10-24';
 
 // These are behaviour patterns, not party labels. Any side's supporter can get any result.
 // title: big result name · subtitle: short tag · description: one-line roast (goes on the share card)
