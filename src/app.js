@@ -1,10 +1,10 @@
 // When you change any file under src/, bump the ?v= value here, in scoring.js and in index.html
 // (tests/scoring.test.js checks they all match) so returning visitors never mix old and new files.
-import { englishQuestions, questions } from './questions.js?v=2026-10-21';
-import { archetypes, chances, getResult, rankHabits } from './scoring.js?v=2026-10-21';
-import { cardKicker, personalResult, shareFlavour } from './personal.js?v=2026-10-21';
-import { MIN_TOTAL_FOR_CHART, SLICE_ORDER, fetchStats, percentages, recordResult } from './stats.js?v=2026-10-21';
-import { CUSTOM_NAME_MAX, cleanName, customSymbols, fillTokens, findParty, initials, neutralChoices, parties, personalWords } from './parties.js?v=2026-10-21';
+import { englishQuestions, questions } from './questions.js?v=2026-10-22';
+import { archetypes, chances, getResult, rankHabits } from './scoring.js?v=2026-10-22';
+import { cardKicker, personalResult, shareFlavour } from './personal.js?v=2026-10-22';
+import { MIN_TOTAL_FOR_CHART, SLICE_ORDER, fetchStats, percentages, recordResult } from './stats.js?v=2026-10-22';
+import { CUSTOM_NAME_MAX, cleanName, customSymbols, fillTokens, findParty, initials, neutralChoices, parties, personalWords } from './parties.js?v=2026-10-22';
 
 // Public address used in share messages and on result cards.
 const SITE_URL = 'https://andhbhaktyachamcha.in';
@@ -33,9 +33,10 @@ let answers = [];
 let currentQuestion = 0;
 let result = null;
 let advancing = false;
-// The whole site is Hinglish. English copy is kept in the code (t() second argument, englishQuestions)
-// so an English mode can be switched back on later by setting this to 'english'.
+// Hinglish by default. The header switch flips the whole site (questions, results, share text, cards)
+// at any point, even mid-quiz; answers and the party pick are kept.
 let language = 'hinglish';
+let customDraft = null;
 let view = 'landing';
 // Party/leader picked before the quiz. Kept only in this variable: never scored, stored, sent to analytics or shown on results.
 let preference = null;
@@ -51,16 +52,38 @@ const chosenParty = () => (preference?.partyId ? findParty(preference.partyId, p
 const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
 const avatarText = (name) => initials(name) || '🙂';
 
-function languageToggle() {
-  return `<div class="language-toggle" role="group" aria-label="Question language"><span>Language</span><button class="${language === 'hinglish' ? 'active' : ''}" data-language="hinglish" aria-pressed="${language === 'hinglish'}">Hinglish</button><button class="${language === 'english' ? 'active' : ''}" data-language="english" aria-pressed="${language === 'english'}">English</button></div>`;
+// Localised view of a result: English mode swaps in archetype.en fields; titles stay as they are.
+const loc = (archetype) => (archetype && language === 'english' ? { ...archetype, ...archetype.en } : archetype);
+
+const headerSwitch = document.createElement('div');
+headerSwitch.className = 'lang-switch';
+headerSwitch.setAttribute('role', 'group');
+headerSwitch.setAttribute('aria-label', 'Language / Bhasha');
+document.querySelector('.site-header')?.append(headerSwitch);
+const headerNote = document.querySelector('.header-note');
+const footerNote = document.querySelector('.site-footer p');
+
+function renderChrome() {
+  document.documentElement.lang = language === 'english' ? 'en' : 'hi-Latn';
+  headerSwitch.innerHTML = ['hinglish', 'english'].map((code) => `<button class="${language === code ? 'active' : ''}" data-language="${code}" aria-pressed="${language === code}">${code === 'hinglish' ? 'Hinglish' : 'English'}</button>`).join('');
+  if (headerNote) headerNote.textContent = t('Bilkul unofficial reality check', 'A totally unofficial reality check');
+  if (footerNote) footerNote.textContent = t('Independent satire. Kisi party, leader, sarkari department ya election authority se koi connection nahi.', 'Independent satire. Not linked to any party, leader, government department or election authority.');
 }
 
-function bindLanguageToggle() {
-  app.querySelectorAll('[data-language]').forEach((button) => button.addEventListener('click', () => {
-    language = button.dataset.language;
-    ({ landing: renderLanding, party: renderParty, leader: renderLeader, custom: renderCustomParty, quiz: renderQuiz })[view]?.();
-  }));
-}
+headerSwitch.addEventListener('click', (event) => {
+  const button = event.target.closest('[data-language]');
+  if (!button || button.dataset.language === language) return;
+  if (view === 'custom') {
+    customDraft = { party: app.querySelector('#custom-party')?.value || '', leader: app.querySelector('#custom-leader')?.value || '', symbol: app.querySelector('.symbol-choice.selected')?.dataset.symbol };
+  }
+  const scroll = window.scrollY;
+  language = button.dataset.language;
+  renderChrome();
+  ({ landing: renderLanding, party: renderParty, leader: renderLeader, custom: renderCustomParty, quiz: renderQuiz, result: renderResult })[view]?.();
+  window.scrollTo({ top: scroll });
+});
+
+function bindLanguageToggle() { /* language switching now lives in the header (renderChrome) */ }
 
 function setPage(name) {
   view = name;
@@ -83,8 +106,8 @@ function renderLanding() {
             <p class="hero-note">${t('2 minute. Koi login nahi. Kuch save nahi hota.', '2 minutes. No login. Nothing is saved.')}</p>
           </div>
           <div class="ticket-stack" aria-hidden="true">
-            ${fan.map((a) => `<div class="ticket c-${a.id}"><div class="ticket-emoji">${a.emoji}</div><h3>${shortTitle(a)}</h3><p>${a.subtitle}</p></div>`).join('')}
-            <div class="stamp">Tumhara<br>result?</div>
+            ${fan.map(loc).map((a) => `<div class="ticket c-${a.id}"><div class="ticket-emoji">${a.emoji}</div><h3>${shortTitle(a)}</h3><p>${a.subtitle}</p></div>`).join('')}
+            <div class="stamp">${t('Tumhara<br>result?', 'Your<br>result?')}</div>
           </div>
         </div>
       </section>
@@ -104,7 +127,7 @@ function renderLanding() {
         <h2 id="results-title">${t('6 type ke log. Tum kaunse?', '6 kinds of people. Which one are you?')}</h2>
         <p>${t('Har group chat mein milte hain.', 'You will find them in every group chat.')}</p>
         <div class="result-tiles">
-          ${Object.values(archetypes).map((a) => `<article class="result-tile c-${a.id}"><div class="tile-emoji" aria-hidden="true">${a.emoji}</div><div><h3>${shortTitle(a)}</h3><p>${a.subtitle}</p></div></article>`).join('')}
+          ${Object.values(archetypes).map(loc).map((a) => `<article class="result-tile c-${a.id}"><div class="tile-emoji" aria-hidden="true">${a.emoji}</div><div><h3>${shortTitle(a)}</h3><p>${a.subtitle}</p></div></article>`).join('')}
         </div>
         <div class="habit-note">
           <div class="note-emoji" aria-hidden="true">🤝</div>
@@ -176,7 +199,8 @@ function renderParty() {
 
 function renderCustomParty() {
   setPage('custom');
-  const draft = preference?.partyId === 'custom' ? preference.custom : { party: '', leader: '', symbol: customSymbols[0] };
+  const draft = customDraft || (preference?.partyId === 'custom' ? preference.custom : { party: '', leader: '', symbol: customSymbols[0] });
+  customDraft = null;
   let symbol = draft.symbol;
   app.innerHTML = `
     <section class="pick-shell page-width" aria-labelledby="pick-title">
@@ -413,7 +437,9 @@ async function showResultStat(archetype) {
 
 function renderResult() {
   setPage('result');
-  const { archetype, runnerUp, counts, evidence } = result;
+  const { counts, evidence } = result;
+  const archetype = loc(result.archetype);
+  const runnerUp = loc(result.runnerUp);
   const breakdown = rankHabits(counts, evidence).filter((habit) => counts[habit] > 0).map((habit) => `
     <li><span>${archetypes[habit].emoji} ${shortTitle(archetypes[habit])}</span><span class="habit-bar" aria-hidden="true"><i class="c-${habit}" style="width:${Math.round((counts[habit] / chances[habit]) * 100)}%"></i></span><span>${counts[habit]}/${chances[habit]}</span></li>`).join('');
   const waLink = `https://wa.me/?text=${encodeURIComponent(shareText())}`;
@@ -492,17 +518,17 @@ function teamVerdict(archetype) {
 }
 
 function shareText() {
-  const { archetype } = result;
+  const archetype = loc(result.archetype);
   const flavour = shareFlavour(preference, L());
-  return `${flavour ? `${flavour}\n` : ''}Mera result: ${archetype.emoji} *${archetype.title}* 😭\n"${archetype.description}"\n\nTumhara kya aata hai? 👉 ${config.url}`;
+  return `${flavour ? `${flavour}\n` : ''}${t('Mera result', 'My result')}: ${archetype.emoji} *${archetype.title}* 😭\n"${archetype.description}"\n\n${t('Tumhara kya aata hai?', 'What do you get?')} 👉 ${config.url}`;
 }
-function challengeText() { return `Ek quiz kar ke dekh 😏\nMera ${result.archetype.emoji} ${shortTitle(result.archetype)} aaya. Tera kya aata hai?\n👉 ${config.url}`; }
+function challengeText() { return t(`Ek quiz kar ke dekh 😏\nMera ${result.archetype.emoji} ${shortTitle(result.archetype)} aaya. Tera kya aata hai?\n👉 ${config.url}`, `Try this quiz 😏\nI got ${result.archetype.emoji} ${shortTitle(result.archetype)}. What do you get?\n👉 ${config.url}`); }
 
 async function shareOrCopy(text, copiedMessage) {
   if (navigator.share) {
     try { await navigator.share({ title: config.brand, text }); return; } catch (error) { if (error.name === 'AbortError') return; }
   }
-  try { await navigator.clipboard.writeText(text); showToast(copiedMessage); } catch { showToast('Copy nahi ho paya. Link: ' + displayUrl()); }
+  try { await navigator.clipboard.writeText(text); showToast(copiedMessage); } catch { showToast(t('Copy nahi ho paya. Link: ', 'Could not copy. Link: ') + displayUrl()); }
 }
 const shareChallenge = () => { track('share', { method: 'challenge' }); return shareOrCopy(challengeText(), t('Message copy ho gaya. Dost ko paste karo.', 'Message copied. Paste it to a friend.')); };
 
@@ -580,7 +606,7 @@ export function drawCard(canvas, archetype, format, url, kicker = null) {
   // Kicker
   let y = L.emojiY + L.r + L.gapKicker;
   ctx.font = `600 ${L.kicker}px Hind, sans-serif`;
-  let kickerSize = L.kicker; const kickerText = kicker || 'Mera result:';
+  let kickerSize = L.kicker; const kickerText = kicker || t('Mera result:', 'My result:');
   for (;;) { ctx.font = `600 ${kickerSize}px Hind, sans-serif`; if (ctx.measureText(kickerText).width <= W - pad * 2 || kickerSize <= 26) break; kickerSize -= 2; }
   ctx.fillText(kickerText, cx, y);
 
@@ -596,7 +622,7 @@ export function drawCard(canvas, archetype, format, url, kicker = null) {
   // Footer: call to action and URL pill (fixed position)
   const pillTop = L.footer + 26;
   ctx.font = `700 ${L.cta}px Hind, sans-serif`;
-  ctx.fillText('Tumhara result kya hai? 2 minute ka quiz:', cx, L.footer);
+  ctx.fillText(t('Tumhara result kya hai? 2 minute ka quiz:', 'What is your result? A 2-minute quiz:'), cx, L.footer);
   ctx.font = `${L.url}px "Yatra One", serif`;
   const pillW = Math.min(W - pad * 2, ctx.measureText(url).width + 90);
   stickerRect(ctx, cx - pillW / 2, pillTop, pillW, L.pill, L.pill / 2, archetype.id === 'chamcha' ? colours.chalk : colours.haldi, 10);
@@ -620,7 +646,7 @@ export function drawCard(canvas, archetype, format, url, kicker = null) {
 async function renderCard(format) {
   try { await Promise.all([document.fonts.load('60px "Yatra One"'), document.fonts.load('600 40px Hind'), document.fonts.load('700 40px Hind')]); } catch { /* fall back to system fonts */ }
   const canvas = document.createElement('canvas');
-  drawCard(canvas, result.archetype, format, displayUrl(), cardKicker(preference, L()));
+  drawCard(canvas, loc(result.archetype), format, displayUrl(), cardKicker(preference, L()));
   return canvas;
 }
 const cardName = (format) => `andhbhakt-ya-chamcha-${result.archetype.id}-${format}.png`;
@@ -661,4 +687,5 @@ function beginQuestions() {
 }
 function restart() { startQuiz(); }
 
+renderChrome();
 renderLanding();

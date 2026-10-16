@@ -40,6 +40,8 @@ When you change any file under `src/` or `styles.css`, bump the `?v=` value ever
 - `tests/scoring.test.js`: deterministic scoring tests.
 - `about.html`, `privacy.html`, `terms.html`, `contact.html`: launch-draft information pages.
 
+The header has a Hinglish/English switch on every screen; English text lives in `t()` second arguments, `englishQuestions` and `archetype.en`.
+
 The public URL is set in `SITE_URL` in `src/app.js` and in the canonical/og tags in `index.html`. Google Analytics counts only five events via `track()` in `src/app.js`: quiz_start, team_pick (real_party / custom / no_party), quiz_complete, share (method) and instagram_click. Answers, results, party and leader are never sent; tests enforce this. See them in GA under Reports > Engagement > Events (they can take up to a day to appear).
 
 ## Before launch

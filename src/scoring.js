@@ -1,11 +1,19 @@
-import { questions } from './questions.js?v=2026-10-21';
+import { questions } from './questions.js?v=2026-10-22';
 
 // These are behaviour patterns, not party labels. Any side's supporter can get any result.
 // title: big result name · subtitle: short tag · description: one-line roast (goes on the share card)
 // verdict: plain explanation of the behaviour · superpower / weakness: the two trait boxes
+// en: English versions of the same fields (used when the visitor switches to English)
 export const archetypes = {
   andhbhakt: {
     id: 'andhbhakt',
+    en: {
+      subtitle: "Trust 100%. Questions 0%.",
+      description: "The leader said it, so it is final. Doubt is not in the syllabus.",
+      verdict: "You genuinely believe your leader can do no wrong. Even when evidence shows up, your first reaction is: \"It is propaganda.\"",
+      superpower: "Rock-solid loyalty. You never leave, even in tough times.",
+      weakness: "Leaders are human too. Give evidence the mic sometimes.",
+    },
     emoji: '🙈',
     title: 'Andhbhakt Mode: ON',
     subtitle: 'Bharosa 100%. Sawaal 0%.',
@@ -16,6 +24,13 @@ export const archetypes = {
   },
   chamcha: {
     id: 'chamcha',
+    en: {
+      subtitle: "Brand ambassador of \"But they did it too\".",
+      description: "Unofficial customer support for the party. Available 24x7.",
+      verdict: "You know your side is sometimes wrong. But instead of admitting it, you find an excuse, change the topic or pull out the other side's list.",
+      superpower: "A counter-example ready in 2 seconds, in any argument.",
+      weakness: "Their mistake does not make your side's mistake right.",
+    },
     emoji: '🥄',
     title: 'Chamcha Mode: ON',
     subtitle: '"Unhone bhi toh kiya tha" ke brand ambassador.',
@@ -26,6 +41,13 @@ export const archetypes = {
   },
   factChecker: {
     id: 'factChecker',
+    en: {
+      subtitle: "The group's unpaid fact-checker.",
+      description: "Forward later. Source first, bro!",
+      verdict: "Whatever the claim, you look for the source, the context and the original video first. A screenshot is not evidence for you.",
+      superpower: "Fake news does not last two minutes around you.",
+      weakness: "Not every family forward is an investigation. Sometimes it is just good morning.",
+    },
     emoji: '🔎',
     title: 'Fact-Check Wala',
     subtitle: 'Group ka unpaid fact-checker.',
@@ -36,6 +58,13 @@ export const archetypes = {
   },
   spectator: {
     id: 'spectator',
+    en: {
+      subtitle: "Opinion pending. Popcorn ready.",
+      description: "Investor in debate popcorn.",
+      verdict: "You enjoy the drama and the memes of politics, but mostly watch from the sidelines. Jumping into arguments is not your style.",
+      superpower: "BP normal. You never take politics to heart.",
+      weakness: "Some issues affect your life too. Pay attention now and then.",
+    },
     emoji: '🍿',
     title: 'Political Spectator',
     subtitle: 'Opinion pending. Popcorn ready.',
@@ -46,6 +75,13 @@ export const archetypes = {
   },
   manifesto: {
     id: 'manifesto',
+    en: {
+      subtitle: "Chartered accountant of promises.",
+      description: "Speech is done. Now show the delivery report.",
+      verdict: "Speeches do not impress you. Promises, deadlines and work on the ground: that is all you judge by.",
+      superpower: "You look at work, not speeches.",
+      weakness: "Not every result shows up overnight. Context matters too.",
+    },
     emoji: '📋',
     title: 'Manifesto Auditor',
     subtitle: 'Promises ka chartered accountant.',
@@ -56,6 +92,13 @@ export const archetypes = {
   },
   independent: {
     id: 'independent',
+    en: {
+      subtitle: "Same rules for everyone.",
+      description: "The government of my mind is independent.",
+      verdict: "You judge each issue on its own, give the other side credit, and change your mind when new evidence arrives.",
+      superpower: "You ask your own side the same questions you ask the other side.",
+      weakness: "Saying \"I am neutral\" is easy. Keep checking yourself too.",
+    },
     emoji: '🧠',
     title: 'Independent Thinker',
     subtitle: 'Rules sabke liye same.',

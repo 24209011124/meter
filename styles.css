@@ -419,3 +419,13 @@ body.is-landing .site-header, body.is-landing .header-note { color: var(--chalk)
 }
 .stats-legend { max-width: 380px; }
 .donut-centre { font-size: 64px; }
+
+/* ---------- Header language switch (every screen) ---------- */
+.site-header .header-note { margin-left: auto; }
+.lang-switch { display: inline-flex; flex: 0 0 auto; padding: 3px; border: 2px solid var(--jamun); border-radius: 999px; background: var(--chalk); box-shadow: 3px 3px 0 var(--jamun); }
+.lang-switch button { min-height: 34px; padding: 0 12px; border: 0; border-radius: 999px; background: transparent; color: var(--jamun); font-weight: 700; font-size: .85rem; }
+.lang-switch button.active { background: var(--jamun); color: var(--chalk); }
+@media (hover: hover) { .lang-switch button:not(.active):hover { background: var(--lilac); } }
+body.is-landing .lang-switch { border-color: var(--chalk); box-shadow: 3px 3px 0 var(--jamun); }
+@media (max-width: 600px) { .lang-switch button { min-height: 32px; padding: 0 10px; font-size: .8rem; } .brand { font-size: 1.1rem; } }
+@media (max-width: 380px) { .brand > span:last-child { display: none; } }

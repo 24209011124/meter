@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { englishQuestions, questions } from '../src/questions.js?v=2026-10-21';
-import { archetypes, chances, countHabits, getResult } from '../src/scoring.js?v=2026-10-21';
-import { cleanName, fillTokens, findParty, parties, personalWords } from '../src/parties.js?v=2026-10-21';
-import { SHARE_REAL_PARTIES, cardKicker, personalResult, shareFlavour } from '../src/personal.js?v=2026-10-21';
-import { SLICE_ORDER, percentages } from '../src/stats.js?v=2026-10-21';
+import { englishQuestions, questions } from '../src/questions.js?v=2026-10-22';
+import { archetypes, chances, countHabits, getResult } from '../src/scoring.js?v=2026-10-22';
+import { cleanName, fillTokens, findParty, parties, personalWords } from '../src/parties.js?v=2026-10-22';
+import { SHARE_REAL_PARTIES, cardKicker, personalResult, shareFlavour } from '../src/personal.js?v=2026-10-22';
+import { SLICE_ORDER, percentages } from '../src/stats.js?v=2026-10-22';
 
 const habits = Object.keys(archetypes);
 const allAnswerSets = function* () {
@@ -177,6 +177,16 @@ for (const word of ['preference', 'party', 'leader', 'answers', 'custom', 'local
   assert.ok(!new RegExp(`\\b${word}\\b`).test(statsSource.replace(/\/\/.*$/gm, '')), `stats.js must not touch ${word}`);
 }
 assert.ok(/recordResult\(archetype\.id\)/.test(appSource), 'Only the result type is counted');
+
+// ---- English mode covers every result ----
+for (const archetype of Object.values(archetypes)) {
+  for (const field of ['subtitle', 'description', 'verdict', 'superpower', 'weakness']) {
+    assert.ok(archetype.en?.[field], `${archetype.id} needs English ${field}`);
+  }
+  assert.ok(archetype.en.description.length <= 75, `${archetype.id} English roast too long for the card`);
+}
+const englishCopy = JSON.stringify(Object.values(archetypes).map((a) => a.en));
+for (const banned of ['BJP', 'Congress', 'AAP', 'IT Cell', 'High Command', 'Modi', 'Gandhi', 'Kejriwal']) assert.ok(!englishCopy.includes(banned));
 
 assert.throws(() => countHabits([]), /complete set/);
 assert.throws(() => countHabits(Array(7).fill(4)), /complete set/);
