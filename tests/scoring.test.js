@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { englishQuestions, questions } from '../src/questions.js?v=2026-10-24';
-import { archetypes, chances, countHabits, getResult } from '../src/scoring.js?v=2026-10-24';
-import { cleanName, fillTokens, findParty, parties, personalWords } from '../src/parties.js?v=2026-10-24';
-import { SHARE_REAL_PARTIES, cardKicker, personalResult, shareFlavour } from '../src/personal.js?v=2026-10-24';
-import { MIN_TOTAL_FOR_CHART, SLICE_ORDER, percentages } from '../src/stats.js?v=2026-10-24';
-import { EVENTS, campaignUrl, cleanEvent } from '../src/analytics.js?v=2026-10-24';
+import { englishQuestions, questions } from '../src/questions.js?v=2026-10-25';
+import { archetypes, chances, countHabits, getResult } from '../src/scoring.js?v=2026-10-25';
+import { cleanName, fillTokens, findParty, parties, personalWords } from '../src/parties.js?v=2026-10-25';
+import { SHARE_REAL_PARTIES, cardKicker, personalResult, shareFlavour } from '../src/personal.js?v=2026-10-25';
+import { MIN_TOTAL_FOR_CHART, SLICE_ORDER, percentages } from '../src/stats.js?v=2026-10-25';
+import { EVENTS, campaignUrl, cleanEvent } from '../src/analytics.js?v=2026-10-25';
 
 const habits = Object.keys(archetypes);
 const allAnswerSets = function* () {
@@ -173,7 +173,7 @@ assert.ok(/history\.pushState\(\{ screen \}, ''\)/.test(navSource), 'pushState s
 assert.ok(/history\.replaceState\(\{ screen \}, ''\)/.test(navSource), 'replaceState stores only the screen name, no URL');
 assert.ok(!/location|localStorage|sessionStorage/.test(navSource.replace(/\/\/.*$/gm, '')));
 assert.ok(!/history\.(push|replace)State/.test(appSource), 'app.js changes history only through nav.js');
-const { SCREEN_PATTERN } = await import('../src/nav.js?v=2026-10-24');
+const { SCREEN_PATTERN } = await import('../src/nav.js?v=2026-10-25');
 for (const ok of ['landing', 'party', 'leader', 'custom', 'quiz-0', 'quiz-6', 'result']) assert.ok(SCREEN_PATTERN.test(ok));
 for (const bad of ['quiz-7', 'bjp', 'party-bjp', 'result-chamcha', '']) assert.ok(!SCREEN_PATTERN.test(bad), `Screen "${bad}" must be rejected`);
 // Share wording never claims a save or share that the browser didn't confirm.
@@ -206,7 +206,7 @@ assert.ok(shareFlavour(custom, 0).includes('supreme leader: Pratik'));
 
 // ---- Public result-type counter ----
 assert.deepEqual([...SLICE_ORDER].sort(), [...habits].sort(), 'Chart covers every result type');
-assert.ok(MIN_TOTAL_FOR_CHART >= 50, 'Chart stays hidden until at least 50 results');
+assert.ok(MIN_TOTAL_FOR_CHART >= 10, 'Chart stays hidden until at least 10 results');
 assert.deepEqual(percentages({ andhbhakt: 1, chamcha: 1, independent: 2, spectator: 0, factChecker: 0, manifesto: 0 }, 4).independent, 50);
 assert.equal(percentages(Object.fromEntries(habits.map((h) => [h, 0])), 0).chamcha, 0);
 const statsSource = readFileSync(new URL('../src/stats.js', import.meta.url), 'utf8');

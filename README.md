@@ -33,7 +33,7 @@ When you change any file under `src/` or `styles.css`, bump the `?v=` value ever
 - `og-image.png`: 1200×630 link-preview image for WhatsApp and other apps.
 - `src/questions.js`: quiz copy, with `{party}` / `{leader}` placeholders and an illustrated scene per question.
 - `src/personal.js`: result lines that use the picked party/leader. Real party names stay off share cards and share text (`SHARE_REAL_PARTIES = false`); invented "Apni party banao" parties do appear there.
-- `src/stats.js`: anonymous public counter of result types (Abacus, no account) for the home-page "Ab tak ka scene" chart. Chart appears after `MIN_TOTAL_FOR_CHART` (50) finished quizzes (quizzes, not unique people); below that the home page shows a "warm-up" note, and nothing shows if the service is down.
+- `src/stats.js`: anonymous public counter of result types (Abacus, no account) for the home-page "Ab tak ka scene" chart. Chart appears after `MIN_TOTAL_FOR_CHART` (10) finished quizzes (quizzes, not unique people); below that the home page shows a "warm-up" note, and nothing shows if the service is down.
 - `src/parties.js`: party and leader list for the optional pre-quiz picker (emoji stand-ins, not official logos). Review before each election season. The pick only changes question wording: it is never scored, stored, sent to analytics or shown on results.
 - `src/scoring.js`: archetypes, share-of-chances scoring and tie-break rules.
 - `src/app.js`: quiz navigation, result view, sharing, and result-card export.
